@@ -1,0 +1,42 @@
+<!doctype html>
+<body>
+    <pre></pre>
+    <script>
+
+        const count = 1000000;
+        const pre = document.querySelector("pre");
+
+        function run(name, fn) {
+            const start = performance.now();
+            for (var i = 0; i < count; i++) {
+                fn(i);
+            }
+            const end = performance.now();
+            pre.textContent += `${name}: Ran ${count} iterations in ${Math.round(end - start)}ms\n`;
+        }
+
+        const div = document.createElement("div");
+        div.setAttribute("foo", "a");
+        const test = (i) => div.setAttribute("foo", i);
+
+        //  raw test
+        run('Raw', test);
+
+        const setAttribute = Element.prototype.setAttribute;
+        Element.prototype.setAttribute = function(...args) {
+            return setAttribute.apply(this, args);
+        };
+
+        //  wrapped test
+        run('Wrap', test);
+
+        Element.prototype.setAttribute = new Proxy(setAttribute, {
+            apply: function (target, thisArg, args) {
+                return target.apply(thisArg, args);
+            }
+        });
+
+        //  proxy test
+        run('Proxy', test);
+    </script>
+</body>
