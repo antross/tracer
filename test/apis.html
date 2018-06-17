@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+    <head>
+        <script src="apis.js"></script>
+        <style>
+            body {
+                background-color: #333;
+                color: #ccc;
+            }
+        </style>
+    </head>
+    <body>
+        <script>
+            window.addEventListener('load', () => {
+                const actions = window._actions.join('\n');
+                document.querySelector('pre').textContent = actions;
+            });
+        </script>
+        <pre></pre>
+    </body>
+</html>
