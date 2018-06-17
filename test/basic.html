@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+    <head>
+        <script src="../src/stablize.js"></script>
+        <script src="../src/trace.js"></script>
+        <style>
+            body {
+                background-color: #333;
+                color: #ccc;
+            }
+        </style>
+    </head>
+    <body>
+        <script>
+            window.addEventListener('load', () => {
+
+                for (var i = 0; i < 2; i++) {
+                    const button = document.createElement('button');
+                    button.setAttribute('type', 'button');
+                    button.textContent = `Test ${Date.now()} ${Math.round(Math.random() * 10)} ${new Date()}`;
+                    button.onclick = () => alert('test');
+                    document.body.appendChild(button);
+                }
+
+                setTimeout(() => {
+                    document.querySelector('button').click();
+
+                    const actions = window._actions.join('\n');
+                    document.querySelector('pre').textContent = actions;
+                }, 100);
+            });
+        </script>
+        <pre></pre>
+    </body>
+</html>
