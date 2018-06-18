@@ -10,18 +10,22 @@
     };
 
     // Make Date(), new Date(), and Date.now() increment by 100ms each call
-    const _Date = Date;
     let d = 1528327767458;
     const now = () => d += 100;
-    Date.now = now;
-    Date = function(...args) {
-        if (!args.length) args[0] = now();
-        return this instanceof _Date ? Reflect.construct(_Date, args) : _Date.apply(this, args);
-    };
-    Object.defineProperties(Date, Object.getOwnPropertyDescriptors(_Date));
+
+    Date.now = new Proxy(Date.now, { 
+        apply: () => now()
+    });
+
+    Date = new Proxy(Date, {
+        apply: () => `${new Date()}`,
+        construct: (t, a, n) => Reflect.construct(t, a.length ? a : [now()], n)
+    });
 
     // Make performance.now() increment by 100ms each call
     let n = 0;
-    performance.now = () => n += 0.1;
+    performance.now = new Proxy(performance.now, {
+        apply: () => n += 0.1
+    });
 
 }());
