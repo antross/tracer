@@ -1,4 +1,8 @@
 import Trace from './trace.js';
+import { ignore as i } from './trace.js';
+
+// Workaround webpack adding Object() references which break tracking.
+const ignore = i;
 
 /**
  * Collection to remember tracked objects ensuring they are only wrapped once.
@@ -55,7 +59,7 @@ function watchGetter(descriptor, key) {
     if (descriptor.get) {
         descriptor.get = new Proxy(descriptor.get, {
             apply: (target, obj, args) => {
-                return Trace.logGet(Trace.add(), obj, key, target.apply(obj, args));
+                return new Trace().get(obj, key, target.apply(obj, args));
             }
         });
     }
@@ -70,7 +74,7 @@ function watchSetter(descriptor, key) {
     if (descriptor.set) {
         descriptor.set = new Proxy(descriptor.set, {
             apply: (target, obj, args) => {
-                return Trace.logSet(Trace.add(), obj, key, args[0], target.apply(obj, args));
+                return new Trace().get(obj, key, args[0], target.apply(obj, args));
             }
         });
     }
@@ -87,14 +91,14 @@ function watchFunction(descriptor, key) {
             apply: (target, obj, args) => {
 
                 if (key === 'addEventListener') {
-                    Trace.ignore(() => {
+                    ignore(() => {
                         const fn = args[1];
 
                         const proxy = args[1] = new Proxy(fn, {
                             apply: (t, o, a) => {
-                                Trace.logContextBegin(`event '${args[0]}'`);
+                                new Trace().begin(`event '${args[0]}'`);
                                 const result = t.apply(o, a);
-                                Trace.logContextEnd();
+                                new Trace().end();
                                 return result;
                             }
                         });
@@ -104,14 +108,14 @@ function watchFunction(descriptor, key) {
                 }
 
                 if (key === 'removeEventListener') {
-                    Trace.ignore(() => args[1] = listeners.get(args[1]));
+                    ignore(() => args[1] = listeners.get(args[1]));
                 }
 
-                return Trace.logApply(Trace.add(), obj, key, args, target.apply(obj, args));
+                return new Trace().apply(obj, key, args, target.apply(obj, args));
             },
             construct: (target, args, newTarget) => {
-                return Trace.logConstruct(Trace.add(), key, args, Reflect.construct(target, args, newTarget));
+                return new Trace().construct(key, args, Reflect.construct(target, args, newTarget));
             }
-        })
+        });
     }
 }

@@ -3,7 +3,7 @@
  * Log of actions performed during the trace.
  * @type {string[]}
  */
-const actions = ['var o = [];'];
+export const actions = ['var o = [];'];
 
 /**
  * Tracks seen objects to assign consistent IDs in the trace.
@@ -30,7 +30,7 @@ let indent = '';
  * Helper to serialize function parameters to a string.
  * @param {any[]} args The parameters to serialize.
  */
-const argsToString = (args) => {
+const serializeArgs = (args) => {
     let results = [];
     for (let i = 0; i < args.length; i++) {
         results.push(id(args[i]));
@@ -66,51 +66,38 @@ const id = (obj) => {
 };
 
 /**
- * Collection of helpers to create a log of API calls.
+ * Run a function ignoring any contained trace calls.
+ * Will not run if trace calls are already being ignored.
+ * @param {function} fn The function to run.
+ */
+export function ignore(fn) {
+    let result;
+    if (!ignoring) {
+        ignoring = true;
+        result = fn();
+        ignoring = false;
+    }
+    return result;
+}
+
+/**
+ * Represents a log entry in the trace.
  */
 export default class Trace {
 
-    static get actions() {
-        return actions;
-    }
-
-    static get ignoring() {
-        return ignoring;
-    }
-
-    /**
-     * Run a function ignoring any contained trace calls.
-     * Will not run if trace calls are already being ignored.
-     * @param {function} fn The function to run.
-     */
-    static ignore(fn) {
-        let result;
-        if (!ignoring) {
-            ignoring = true;
-            result = fn();
-            ignoring = false;
-        }
-        return result;
-    }
-
-    /**
-     * Append a new log entry to the trace.
-     * @returns {number} The index of the new log entry.
-     */
-    static add() {
-        return Trace.ignore(() => actions.push('') - 1);
+    constructor() {
+        this.index = ignore(() => actions.push('') - 1);
     }
 
     /**
      * Log a `get` with the provided information to the trace.
-     * @param {number} index The log entry position to populate.
      * @param {any} obj The target object.
      * @param {string} key The property name.
      * @param {any} result The returned value.
      */
-    static logGet(index, obj, key, result) {
+    get(obj, key, result) {
 
-        Trace.ignore(() => {
+        ignore(() => {
             let prefix = '';
 
             if (typeof result === 'object') {
@@ -127,7 +114,7 @@ export default class Trace {
                 }
             }
 
-            actions[index] = `${indent}${prefix}${id(obj)}.${key};`;
+            actions[this.index] = `${indent}${prefix}${id(obj)}.${key};`;
         });
 
         return result;
@@ -135,30 +122,28 @@ export default class Trace {
 
     /**
      * Log a `set` with the provided information to the trace.
-     * @param {number} index The log entry position to populate.
      * @param {any} obj The target object.
      * @param {string} key The property name.
      * @param {any} value The returned value.
      * @param {any} result The returned value.
      */
-    static logSet(index, obj, key, value, result) {
-        Trace.ignore(() => {
-            actions[index] = `${indent}${id(obj)}.${key} = ${id(value)};`;
+    set(obj, key, value, result) {
+        ignore(() => {
+            actions[this.index] = `${indent}${id(obj)}.${key} = ${id(value)};`;
         });
         return result;
     };
 
     /**
      * Log a function call with the provided information to the trace.
-     * @param {number} index The log entry position to populate.
      * @param {any} obj The target object.
      * @param {string} key The property name.
      * @param {any[]} args The provided arguments.
      * @param {any} result The returned value.
      */
-    static logApply(index, obj, key, args, result) {
+    apply(obj, key, args, result) {
 
-        Trace.ignore(() => {
+        ignore(() => {
             let prefix = '';
             let postfix = '';
             let type = typeof result;
@@ -170,7 +155,7 @@ export default class Trace {
                 postfix = ` === ${id(result)}`;
             }
 
-            actions[index] = `${indent}${prefix}${!obj ? '' : id(obj) + '.'}${key}(${argsToString(args)})${postfix};`;
+            actions[this.index] = `${indent}${prefix}${!obj ? '' : id(obj) + '.'}${key}(${serializeArgs(args)})${postfix};`;
         });
 
         return result;
@@ -178,16 +163,15 @@ export default class Trace {
 
     /**
      * Log an object creation with the provided information to the trace.
-     * @param {number} index The log entry position to populate.
      * @param {string} key The property name.
      * @param {any[]} args The provided arguments.
      * @param {any} result The returned value.
      */
-    static logConstruct(index, key, args, result) {
+    construct(key, args, result) {
 
-        Trace.ignore(() => {
+        ignore(() => {
             created.set(result, nextId);
-            actions[index] = `${indent}o[${nextId}] = new ${key}(${argsToString(args)});`;
+            actions[this.index] = `${indent}o[${nextId}] = new ${key}(${serializeArgs(args)});`;
             nextId++;
         });
 
@@ -195,23 +179,23 @@ export default class Trace {
     }
 
     /**
-     * 
-     * @param {string} name 
+     * Wrap and indent subsequent trace logs under a named context.
+     * @param {string} name The name to display for the context.
      */
-    static logContextBegin(name) {
-        Trace.ignore(() => {
-            actions.push(`\n${indent}// ${name}\n${indent}{`);
+    begin(name) {
+        ignore(() => {
+            actions[this.index] = `\n${indent}// ${name}\n${indent}{`;
             indent += '\t';
         });
     }
 
     /**
-     * 
+     * Close the current wrapping context and remove the indent.
      */
-    static logContextEnd() {
-        Trace.ignore(() => {
+    end() {
+        ignore(() => {
             indent = indent.substr(1);
-            actions.push(`${indent}}`);
+            actions[this.index] = `${indent}}`;
         });
     }
 }
