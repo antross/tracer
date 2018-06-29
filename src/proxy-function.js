@@ -1,8 +1,10 @@
+// Polyfill Function.prototype.toString to handle Proxy correctly
 (function() {
+    'use strict';
 
     // Check if the polyfill is needed
     try {
-        if (new Proxy(Date, {}).toString() === 'function Date() { [native code] }') {
+        if (`${new Proxy(Date, {})}` === 'function Date() { [native code] }') {
             return; // If not, exit now 
         }
     } catch(e) {
@@ -11,6 +13,7 @@
 
     const proxies = new WeakMap();
 
+    // Shim proxy creation to track proxied functions
     Proxy = new Proxy(Proxy, {
         construct: (target, args, newTarget) => {
 
@@ -25,6 +28,7 @@
         }
     });
 
+    // Shim Function.prototype.toString to unwrap proxied functions
     Function.prototype.toString = new Proxy(Function.prototype.toString, {
         apply: (target, obj, args) => {
 
