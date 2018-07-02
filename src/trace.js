@@ -71,13 +71,11 @@ const id = (obj) => {
  * @param {function} fn The function to run.
  */
 export function ignore(fn) {
-    let result;
     if (!ignoring) {
         ignoring = true;
-        result = fn();
+        fn();
         ignoring = false;
     }
-    return result;
 }
 
 /**
