@@ -84,7 +84,11 @@ export function ignore(fn) {
 export default class Trace {
 
     constructor() {
-        this.index = ignore(() => actions.push('') - 1);
+        let index = 0;
+        ignore(() => {
+            index = actions.push('') - 1;
+        });
+        this.index = index;
     }
 
     /**
