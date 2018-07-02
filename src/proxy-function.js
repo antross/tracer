@@ -33,7 +33,7 @@
         apply: (target, obj, args) => {
 
             // Unwrap proxies around functions before converting to string
-            if (proxies.has(obj)) {
+            while (proxies.has(obj)) {
                 obj = proxies.get(obj);
             }
 
