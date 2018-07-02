@@ -62,6 +62,16 @@ function watchGetter(descriptor, key) {
                 return new Trace().get(obj, key, target.apply(obj, args));
             }
         });
+
+        // Watch contexts for event listeners.
+        if (/^on/.test(key)) {
+            descriptor.get = new Proxy(descriptor.get, {
+                apply: (target, obj, args) => {
+                    args[0] = getFunctionFor(args[0]);
+                    return target.apply(obj, args);
+                }
+            });
+        }
     }
 }
 
@@ -77,6 +87,16 @@ function watchSetter(descriptor, key) {
                 return new Trace().get(obj, key, args[0], target.apply(obj, args));
             }
         });
+
+        // Watch contexts for event listeners.
+        if (/^on/.test(key)) {
+            descriptor.set = new Proxy(descriptor.set, {
+                apply: (target, obj, args) => {
+                    args[0] = watchContext(`event ${key.substr(2)}`, args[0]);
+                    return target.apply(obj, args);
+                }
+            });
+        }
     }
 }
 
@@ -89,33 +109,94 @@ function watchFunction(descriptor, key) {
     if (descriptor.value && typeof descriptor.value === 'function') {
         descriptor.value = new Proxy(descriptor.value, {
             apply: (target, obj, args) => {
-
-                if (key === 'addEventListener') {
-                    ignore(() => {
-                        const fn = args[1];
-
-                        const proxy = args[1] = new Proxy(fn, {
-                            apply: (t, o, a) => {
-                                new Trace().begin(`event '${args[0]}'`);
-                                const result = t.apply(o, a);
-                                new Trace().end();
-                                return result;
-                            }
-                        });
-
-                        listeners.set(fn, proxy);
-                    });
-                }
-
-                if (key === 'removeEventListener') {
-                    ignore(() => args[1] = listeners.get(args[1]));
-                }
-
                 return new Trace().apply(obj, key, args, target.apply(obj, args));
             },
             construct: (target, args, newTarget) => {
                 return new Trace().construct(key, args, Reflect.construct(target, args, newTarget));
             }
         });
+
+        // Watch contexts for event listeners and known callbacks.
+        if (key === 'addEventListener') {
+            descriptor.value = new Proxy(descriptor.value, {
+                apply: (target, obj, args) => {
+                    args[1] = watchContext(`event ${args[0]}`, args[1]);
+                    return target.apply(obj, args);
+                }
+            });
+        } else if (key === 'removeEventListener') {
+            descriptor.value = new Proxy(descriptor.value, {
+                apply: (target, obj, args) => {
+                    args[1] = getProxyFor(args[1]);
+                    return target.apply(obj, args);
+                }
+            });
+        } else if (key === 'setTimeout') {
+            descriptor.value = new Proxy(descriptor.value, {
+                apply: (target, obj, args) => {
+                    args[0] = watchContext(`timeout ${args[1]}ms`, args[0]);
+                    return target.apply(obj, args);
+                }
+            });
+        } else if (key === 'setInterval') {
+            descriptor.value = new Proxy(descriptor.value, {
+                apply: (target, obj, args) => {
+                    args[0] = watchContext(`interval ${args[1]}ms`, args[0]);
+                    return target.apply(obj, args);
+                }
+            });
+        }
     }
+}
+
+/**
+ * Wrap callbacks to track the start and end of execution contexts (e.g. event handlers).
+ * @param {string} name The name of the context to log.
+ * @param {Function} fn The callback invoked to start the context.
+ */
+function watchContext(name, fn) {
+    let proxy = fn;
+
+    ignore(() => {
+
+        proxy = new Proxy(fn, {
+
+            apply: (target, obj, args) => {
+
+                new Trace().begin(name);
+                const result = target.apply(obj, args);
+                new Trace().end();
+
+                return result;
+            }
+        });
+
+        listeners.set(fn, proxy);
+    });
+
+    return proxy;
+}
+
+/**
+ * 
+ * @param {Function} fn 
+ */
+function getProxyFor(fn) {
+    let proxy;
+
+    ignore(() => proxy = (listeners.get(fn) || null));
+
+    return proxy;
+}
+
+/**
+ * 
+ * @param {*} proxy 
+ */
+function getFunctionFor(proxy) {
+    let fn = proxy;
+
+    ignore(() => fn = (listeners.get(proxy) || null));
+
+    return fn;
 }
