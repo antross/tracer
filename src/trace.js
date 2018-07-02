@@ -50,16 +50,19 @@ const id = (obj) => {
     if (obj === document)
         return 'document';
 
-    if (obj === Math)
-        return 'Math';
-
     switch (typeof obj) {
         case 'string':
             return JSON.stringify(obj);
         case 'function':
             return (obj.name || `function() {}`);
         case 'object':
-            return created.has(obj) ? `o[${created.get(obj)}]` : `${obj}`;
+            if (created.has(obj)) {
+                return `o[${created.get(obj)}]`;
+            } else {
+                return `${obj}`
+                    .replace(/^\[object ([^\]]+)]$/, '$1') // Handle Math, etc.
+                    .replace(/^function ([^(]+)\(.+/, '$1') // Work around functions wrapped by 2+ proxies in Edge
+            }
         default:
             return `${obj}`;
     }
