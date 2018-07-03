@@ -14,9 +14,16 @@ const tracked = new WeakSet();
 
 /**
  * Tracks event listeners to establish trace context.
- * @type {WeakMap<Function, Function>}
+ * @type {WeakMap<Function, Proxy>}
  */
-const listeners = new WeakMap();
+const mapFunctionToProxy = new WeakMap();
+
+/**
+ * Reverse mapping of proxies wrapping event listeners back to the original function.
+ * Used to return the original function when accessing `obj.on*` properties.
+ * @type {WeakMap<Proxy, Function>}
+ */
+const mapProxyToFunction = new WeakMap();
 
 /**
  * Track and log actions against the provided object.
@@ -220,32 +227,35 @@ function watchContext(name, fn) {
             }
         });
 
-        listeners.set(fn, proxy);
+        mapFunctionToProxy.set(fn, proxy);
+        mapProxyToFunction.set(proxy, fn);
     });
 
     return proxy;
 }
 
 /**
- * 
- * @param {Function} fn 
+ * Get a proxy used to previously wrap a function.
+ * Returns the passed function if no such wrapper exists.
+ * @param {Function} fn The previously wrapped function.
  */
 function getProxyFor(fn) {
-    let proxy;
+    let proxy = fn;
 
-    ignore(() => proxy = (listeners.get(fn) || null));
+    ignore(() => proxy = (mapFunctionToProxy.get(fn) || fn));
 
     return proxy;
 }
 
 /**
- * 
- * @param {*} proxy 
+ * Get the function wrapped by the provided proxy.
+ * Returns the passed object if it is not a wrapper for a function.
+ * @param {Proxy} proxy 
  */
 function getFunctionFor(proxy) {
     let fn = proxy;
 
-    ignore(() => fn = (listeners.get(proxy) || null));
+    ignore(() => fn = (mapProxyToFunction.get(proxy) || proxy));
 
     return fn;
 }
