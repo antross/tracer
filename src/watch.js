@@ -84,7 +84,7 @@ function watchSetter(descriptor, key) {
     if (descriptor.set) {
         descriptor.set = new Proxy(descriptor.set, {
             apply: (target, obj, args) => {
-                return new Trace().get(obj, key, args[0], target.apply(obj, args));
+                return new Trace().set(obj, key, args[0], target.apply(obj, args));
             }
         });
 
