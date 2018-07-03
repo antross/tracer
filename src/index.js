@@ -9,9 +9,15 @@ const save = s;
 fixProxyToString();
 stabilize();
 
-setTimeout(() => {
+document.addEventListener('click', () => {
     const log = save();
-    document.querySelector('pre').textContent = log;
-}, 1500);
+    ignore(() => {
+        if (document.title === 'Trace Test') {
+            document.querySelector('pre').textContent = log;
+        } else {
+            console.log('// API Trace\n' + log);
+        }
+    });
+});
 
 ignore(() => watch('', window));

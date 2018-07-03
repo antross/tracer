@@ -117,7 +117,7 @@ export default class Trace {
         ignore(() => {
             let prefix = '';
 
-            if (typeof result === 'object') {
+            if (result && typeof result === 'object') {
 
                 if (created.has(result)) {
 
@@ -165,7 +165,7 @@ export default class Trace {
             let postfix = '';
             let type = typeof result;
 
-            if (type === 'object' && !created.has(result)) {
+            if (result && type === 'object' && !created.has(result)) {
                 prefix = `o[${nextId}] = `;
                 created.set(result, nextId++);
             } else if (type !== 'undefined') {
