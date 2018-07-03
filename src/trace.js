@@ -82,6 +82,18 @@ export function ignore(fn) {
 }
 
 /**
+ * Serialize the log of actions.
+ * @returns {string} A string with each logged action on its own line.
+ */
+export function save() {
+    let result = '';
+    ignore(() => {
+        result = actions.join('\n');
+    });
+    return result;
+}
+
+/**
  * Represents a log entry in the trace.
  */
 export default class Trace {
