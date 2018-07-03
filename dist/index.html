@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
     <head>
+        <title>Trace Test</title>
         <script src="../src/proxy-function.js"></script>
         <script src="../src/stabilize.js"></script>
         <script src="main.js"></script>
@@ -19,12 +20,34 @@
                     const button = document.createElement('button');
                     button.setAttribute('type', 'button');
                     button.textContent = `Test ${Date.now()} ${Math.round(Math.random() * 10)} ${new Date()}`;
-                    button.onclick = () => alert('test');
+
+                    if (i === 0) {
+
+                        button.onclick = () => {
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('GET', 'data.json', true);
+                            xhr.send(null);
+                            xhr.onload = () => {
+                                document.querySelector('head').setAttribute('foo', xhr.response.foo);
+                            };
+                        };
+
+                    } else {
+
+                        button.onclick = () => {
+                            fetch('data.json').then(r => {
+                                document.querySelector('title').setAttribute('bar', r.json.bar);
+                            });
+                        };
+
+                    }
+
                     document.body.appendChild(button);
                 }
 
                 setTimeout(() => {
                     document.querySelector('button').click();
+                    document.querySelector('button + button').click();
                 }, 100);
             });
         </script>
