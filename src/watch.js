@@ -4,6 +4,9 @@ import { ignore as i } from './trace.js';
 // Workaround webpack adding Object() references which break tracking.
 const ignore = i;
 
+// Check for CSS properties missing from the prototype chain (Chrome bug).
+const fixCSSStyleDeclaration = !('color' in CSSStyleDeclaration.prototype);
+
 /**
  * Collection to remember tracked objects ensuring they are only wrapped once.
  */
@@ -71,6 +74,27 @@ function watchGetter(descriptor, key) {
                     return target.apply(obj, args);
                 }
             });
+        }
+
+        // Work around missing properties on CSSStyleDeclaration in Chrome
+        if (key === 'style' && fixCSSStyleDeclaration) {
+            descriptor.get = new Proxy(descriptor.get, {
+                apply: (target, obj, args) => {
+                    const style = target.apply(obj, args);
+                    let proxy;
+                    ignore(() => {
+                        proxy = new Proxy(style, {
+                            get: (t, p) => {
+                                return new Trace().get(style, p, t[p]);
+                            },
+                            set: (t, p, v) => {
+                                return new Trace().set(style, p, v, t[p] = v);
+                            }
+                        });
+                    });
+                    return proxy;
+                }
+            })
         }
     }
 }
