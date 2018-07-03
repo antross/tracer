@@ -90,9 +90,10 @@ function watchSetter(descriptor, key) {
 
         // Watch contexts for event listeners.
         if (/^on/.test(key)) {
+            const name = key.substr(2);
             descriptor.set = new Proxy(descriptor.set, {
                 apply: (target, obj, args) => {
-                    args[0] = watchContext(`event ${key.substr(2)}`, args[0]);
+                    args[0] = watchContext(`event ${name}`, args[0]);
                     return target.apply(obj, args);
                 }
             });
