@@ -1,6 +1,8 @@
-// Stabilize platform behavior by changing non-deterministic APIs to have deterministic behavior
-(function() {
-    'use strict';
+/**
+ * Stabilize platform behavior by overriding global, non-deterministic APIs.
+ * Overridden APIs are altered to produce deterministic behavior.
+ */
+export default function stabilize() {
 
     // Make Math.random() step from 0 to 1 in 0.01 increments, then repeat
     let random = 0;
@@ -28,4 +30,4 @@
         apply: () => n += 0.1
     });
 
-}());
+}

@@ -1,6 +1,7 @@
-// Polyfill Function.prototype.toString to handle Proxy correctly
-(function() {
-    'use strict';
+/**
+ * Polyfill Function.prototype.toString to handle Proxy correctly.
+ */
+export default function fixProxyToString() {
 
     // Check if the polyfill is needed
     try {
@@ -41,4 +42,4 @@
         }
     });
 
-}());
+}
