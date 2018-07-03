@@ -29,7 +29,7 @@ export default function watch(path, obj) {
 
     const prefix = path ? `${path}.` : '';
     const descriptors = Object.getOwnPropertyDescriptors(obj);
-    const keys = Object.keys(descriptors).filter(k => k[0] !== '$' && !/^(apply|construct)$/.test(k));
+    const keys = Object.keys(descriptors).filter(k => k[0] !== '$' && !/^(apply|construct|constructor)$/.test(k));
 
     keys.forEach(key => {
         const descriptor = descriptors[key];
@@ -146,6 +146,28 @@ function watchFunction(descriptor, key) {
                     return target.apply(obj, args);
                 }
             });
+        } else if (key === 'then') {
+            descriptor.value = new Proxy(descriptor.value, {
+                apply: (target, obj, args) => {
+                    args[0] = watchContext(`then (fulfilled)`, args[0]);
+                    args[1] = watchContext(`then (rejected)`, args[1]);
+                    return target.apply(obj, args);
+                }
+            });
+        } else if (key === 'catch') {
+            descriptor.value = new Proxy(descriptor.value, {
+                apply: (target, obj, args) => {
+                    args[0] = watchContext(`catch`, args[0]);
+                    return target.apply(obj, args);
+                }
+            });
+        } else if (key === 'finally') {
+            descriptor.value = new Proxy(descriptor.value, {
+                apply: (target, obj, args) => {
+                    args[0] = watchContext(`finally`, args[0]);
+                    return target.apply(obj, args);
+                }
+            });
         }
     }
 }
@@ -156,6 +178,8 @@ function watchFunction(descriptor, key) {
  * @param {Function} fn The callback invoked to start the context.
  */
 function watchContext(name, fn) {
+    if (!fn) return fn;
+
     let proxy = fn;
 
     ignore(() => {

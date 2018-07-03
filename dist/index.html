@@ -28,16 +28,20 @@
                             xhr.open('GET', 'data.json', true);
                             xhr.send(null);
                             xhr.onload = () => {
-                                document.querySelector('head').setAttribute('foo', xhr.response.foo);
+                                document.querySelector('head').setAttribute('foo', JSON.parse(xhr.responseText).foo);
                             };
                         };
 
                     } else {
 
                         button.onclick = () => {
-                            fetch('data.json').then(r => {
-                                document.querySelector('title').setAttribute('bar', r.json.bar);
-                            });
+                            fetch('data.json')
+                                .then(r => r.text())
+                                .then(text => JSON.parse(text))
+                                .then(data => {
+                                    document.querySelector('title').setAttribute('bar', data.bar);
+                                })
+                            ;
                         };
 
                     }
@@ -45,10 +49,8 @@
                     document.body.appendChild(button);
                 }
 
-                setTimeout(() => {
-                    document.querySelector('button').click();
-                    document.querySelector('button + button').click();
-                }, 100);
+                setTimeout(() => document.querySelector('button').click(), 100);
+                setTimeout(() => document.querySelector('button + button').click(), 200);
             });
         </script>
         <pre></pre>
