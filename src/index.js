@@ -9,6 +9,8 @@ const save = s;
 fixProxyToString();
 stabilize();
 
+console.log('API Tracer: Tracing script loaded. Watching API calls...');
+
 document.addEventListener('click', () => {
     const log = save();
     ignore(() => {

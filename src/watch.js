@@ -40,6 +40,7 @@ export default function watch(path, obj) {
     const prefix = path ? `${path}.` : '';
     const descriptors = Object.getOwnPropertyDescriptors(obj);
     const keys = Object.keys(descriptors).filter(k => k[0] !== '$' && !/^(apply|construct|constructor)$/.test(k));
+    const keys = Object.keys(descriptors).filter(k => k[0] !== '$' && !/^(apply|construct|constructor|timing|navigation)$/.test(k));
 
     keys.forEach(key => {
         const descriptor = descriptors[key];
