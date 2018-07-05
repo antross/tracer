@@ -1,11 +1,8 @@
+import fixInstanceStyles from './workarounds/fix-instance-styles.js';
 import Trace from './trace.js';
 import { ignore as i } from './trace.js';
 
-// Workaround webpack adding Object() references which break tracking.
-const ignore = i;
-
-// Check for CSS properties missing from the prototype chain (Chrome bug).
-const fixCSSStyleDeclaration = !('color' in CSSStyleDeclaration.prototype);
+const ignore = i; // Workaround webpack adding Object() references which break tracking.
 
 /**
  * Collection to remember tracked objects ensuring they are only wrapped once.
@@ -39,7 +36,6 @@ export default function watch(path, obj) {
 
     const prefix = path ? `${path}.` : '';
     const descriptors = Object.getOwnPropertyDescriptors(obj);
-    const keys = Object.keys(descriptors).filter(k => k[0] !== '$' && !/^(apply|construct|constructor)$/.test(k));
     const keys = Object.keys(descriptors).filter(k => k[0] !== '$' && !/^(apply|construct|constructor|timing|navigation)$/.test(k));
 
     keys.forEach(key => {
@@ -85,24 +81,8 @@ function watchGetter(descriptor, key) {
         }
 
         // Work around missing properties on CSSStyleDeclaration in Chrome
-        if (key === 'style' && fixCSSStyleDeclaration) {
-            descriptor.get = new Proxy(descriptor.get, {
-                apply: (target, obj, args) => {
-                    const style = target.apply(obj, args);
-                    let proxy;
-                    ignore(() => {
-                        proxy = new Proxy(style, {
-                            get: (t, p) => {
-                                return new Trace().get(style, p, t[p]);
-                            },
-                            set: (t, p, v) => {
-                                return new Trace().set(style, p, v, t[p] = v);
-                            }
-                        });
-                    });
-                    return proxy;
-                }
-            })
+        if (key === 'style') {
+            descriptor.get = fixInstanceStyles(descriptor.get);
         }
     }
 }
@@ -150,24 +130,8 @@ function watchFunction(descriptor, key) {
         });
 
         // Work around missing properties on CSSStyleDeclaration in Chrome
-        if (key === 'getComputedStyle' && fixCSSStyleDeclaration) {
-            descriptor.value = new Proxy(descriptor.value, {
-                apply: (target, obj, args) => {
-                    const style = target.apply(obj, args);
-                    let proxy;
-                    ignore(() => {
-                        proxy = new Proxy(style, {
-                            get: (t, p) => {
-                                return new Trace().get(style, p, t[p]);
-                            },
-                            set: (t, p, v) => {
-                                return new Trace().set(style, p, v, t[p] = v);
-                            }
-                        });
-                    });
-                    return proxy;
-                }
-            })
+        if (key === 'getComputedStyle') {
+            descriptor.value = fixInstanceStyles(descriptor.value);
         }
 
         // Watch contexts for event listeners and known callbacks.
