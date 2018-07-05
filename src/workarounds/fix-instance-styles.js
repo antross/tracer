@@ -1,3 +1,4 @@
+import Reflect from '../mirror/Reflect.js';
 import Trace from '../trace.js';
 import { ignore as i } from '../trace.js';
 
@@ -32,7 +33,7 @@ export default function fixInstanceStyles(fn) {
             let proxy; 
 
             // When retrieving a CSSStyleDeclaration instance...
-            const style = target.apply(obj, args);
+            const style = Reflect.apply(target, obj, args);
 
             ignore(() => {
 

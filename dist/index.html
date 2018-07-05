@@ -31,7 +31,7 @@
                         button.onclick = () => {
                             const xhr = new XMLHttpRequest();
                             xhr.open('GET', 'data.json', true);
-                            xhr.send(null);
+                            xhr.send.apply(xhr, [null]);
                             xhr.onload = () => {
                                 document.querySelector('head').setAttribute('foo', JSON.parse(xhr.responseText).foo);
                             };

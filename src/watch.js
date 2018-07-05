@@ -1,4 +1,5 @@
 import fixInstanceStyles from './workarounds/fix-instance-styles.js';
+import Reflect from './mirror/Reflect';
 import Trace from './trace.js';
 import { ignore as i } from './trace.js';
 
@@ -28,8 +29,6 @@ const mapProxyToFunction = new WeakMap();
  * @type {string[]}
  */
 const exclude = [
-    'apply',        // Currently used outside of `ignore` to invoke functions.
-    'construct',    // Currently used outside of `ignore` via `Reflect.construct` to create objects.
     'constructor',  // Was somehow wrapped for `Promise`, creating odd logs around `then` calls.
     'timing',       // Firefox throws errors using `performance.timing` as a `WeakMap` key.
     'navigation'    // Firefox throws errors using `performance.navigation` as a `WeakMap` key.
@@ -79,7 +78,7 @@ function watchGetter(descriptor, key) {
     if (descriptor.get) {
         descriptor.get = new Proxy(descriptor.get, {
             apply: (target, obj, args) => {
-                return new Trace().get(obj, key, target.apply(obj, args));
+                return new Trace().get(obj, key, Reflect.apply(target, obj, args));
             }
         });
 
@@ -88,7 +87,7 @@ function watchGetter(descriptor, key) {
             descriptor.get = new Proxy(descriptor.get, {
                 apply: (target, obj, args) => {
                     args[0] = getFunctionFor(args[0]);
-                    return target.apply(obj, args);
+                    return Reflect.apply(target, obj, args);
                 }
             });
         }
@@ -109,7 +108,7 @@ function watchSetter(descriptor, key) {
     if (descriptor.set) {
         descriptor.set = new Proxy(descriptor.set, {
             apply: (target, obj, args) => {
-                return new Trace().set(obj, key, args[0], target.apply(obj, args));
+                return new Trace().set(obj, key, args[0], Reflect.apply(target, obj, args));
             }
         });
 
@@ -119,7 +118,7 @@ function watchSetter(descriptor, key) {
             descriptor.set = new Proxy(descriptor.set, {
                 apply: (target, obj, args) => {
                     args[0] = watchContext(`event ${name}`, args[0]);
-                    return target.apply(obj, args);
+                    return Reflect.apply(target, obj, args);
                 }
             });
         }
@@ -135,7 +134,7 @@ function watchFunction(descriptor, key) {
     if (descriptor.value && typeof descriptor.value === 'function') {
         descriptor.value = new Proxy(descriptor.value, {
             apply: (target, obj, args) => {
-                return new Trace().apply(obj, key, args, target.apply(obj, args));
+                return new Trace().apply(obj, key, args, Reflect.apply(target, obj, args));
             },
             construct: (target, args, newTarget) => {
                 return new Trace().construct(key, args, Reflect.construct(target, args, newTarget));
@@ -152,28 +151,28 @@ function watchFunction(descriptor, key) {
             descriptor.value = new Proxy(descriptor.value, {
                 apply: (target, obj, args) => {
                     args[1] = watchContext(`event ${args[0]}`, args[1]);
-                    return target.apply(obj, args);
+                    return Reflect.apply(target, obj, args);
                 }
             });
         } else if (key === 'removeEventListener') {
             descriptor.value = new Proxy(descriptor.value, {
                 apply: (target, obj, args) => {
                     args[1] = getProxyFor(args[1]);
-                    return target.apply(obj, args);
+                    return Reflect.apply(target, obj, args);
                 }
             });
         } else if (key === 'setTimeout') {
             descriptor.value = new Proxy(descriptor.value, {
                 apply: (target, obj, args) => {
                     args[0] = watchContext(`timeout ${args[1]}ms`, args[0]);
-                    return target.apply(obj, args);
+                    return Reflect.apply(target, obj, args);
                 }
             });
         } else if (key === 'setInterval') {
             descriptor.value = new Proxy(descriptor.value, {
                 apply: (target, obj, args) => {
                     args[0] = watchContext(`interval ${args[1]}ms`, args[0]);
-                    return target.apply(obj, args);
+                    return Reflect.apply(target, obj, args);
                 }
             });
         } else if (key === 'then') {
@@ -181,21 +180,21 @@ function watchFunction(descriptor, key) {
                 apply: (target, obj, args) => {
                     args[0] = watchContext(`then (fulfilled)`, args[0]);
                     args[1] = watchContext(`then (rejected)`, args[1]);
-                    return target.apply(obj, args);
+                    return Reflect.apply(target, obj, args);
                 }
             });
         } else if (key === 'catch') {
             descriptor.value = new Proxy(descriptor.value, {
                 apply: (target, obj, args) => {
                     args[0] = watchContext(`catch`, args[0]);
-                    return target.apply(obj, args);
+                    return Reflect.apply(target, obj, args);
                 }
             });
         } else if (key === 'finally') {
             descriptor.value = new Proxy(descriptor.value, {
                 apply: (target, obj, args) => {
                     args[0] = watchContext(`finally`, args[0]);
-                    return target.apply(obj, args);
+                    return Reflect.apply(target, obj, args);
                 }
             });
         }
@@ -219,7 +218,7 @@ function watchContext(name, fn) {
             apply: (target, obj, args) => {
 
                 new Trace().begin(name);
-                const result = target.apply(obj, args);
+                const result = Reflect.apply(target, obj, args);
                 new Trace().end();
 
                 return result;

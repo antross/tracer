@@ -1,3 +1,5 @@
+import Reflect from '../mirror/Reflect.js';
+
 /**
  * Polyfill Function.prototype.toString to handle Proxy correctly.
  */
@@ -38,7 +40,7 @@ export default function fixProxyToString() {
                 obj = proxies.get(obj);
             }
 
-            return target.apply(obj, args);
+            return Reflect.apply(target, obj, args);
         }
     });
 
