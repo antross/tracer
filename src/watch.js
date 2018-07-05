@@ -23,6 +23,19 @@ const mapFunctionToProxy = new WeakMap();
 const mapProxyToFunction = new WeakMap();
 
 /**
+ * List of properties to ignore while tracing, typically due to side-effects.
+ * This list should be as small as possible to reduce blind spots during tracing.
+ * @type {string[]}
+ */
+const exclude = [
+    'apply',        // Currently used outside of `ignore` to invoke functions.
+    'construct',    // Currently used outside of `ignore` via `Reflect.construct` to create objects.
+    'constructor',  // Was somehow wrapped for `Promise`, creating odd logs around `then` calls.
+    'timing',       // Firefox throws errors using `performance.timing` as a `WeakMap` key.
+    'navigation'    // Firefox throws errors using `performance.navigation` as a `WeakMap` key.
+];
+
+/**
  * Track and log actions against the provided object.
  * @param {string} path The path to display in logs.
  * @param {any} obj The object to track.
@@ -36,7 +49,7 @@ export default function watch(path, obj) {
 
     const prefix = path ? `${path}.` : '';
     const descriptors = Object.getOwnPropertyDescriptors(obj);
-    const keys = Object.keys(descriptors).filter(k => k[0] !== '$' && !/^(apply|construct|constructor|timing|navigation)$/.test(k));
+    const keys = Object.keys(descriptors).filter(k => k[0] !== '$' && exclude.indexOf(k) === -1);
 
     keys.forEach(key => {
         const descriptor = descriptors[key];
