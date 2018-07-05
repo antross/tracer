@@ -117,7 +117,7 @@ function watchSetter(descriptor, key) {
             const name = key.substr(2);
             descriptor.set = new Proxy(descriptor.set, {
                 apply: (target, obj, args) => {
-                    args[0] = watchContext(`event ${name}`, args[0]);
+                    args[0] = watchEvent(name, args[0]);
                     return Reflect.apply(target, obj, args);
                 }
             });
@@ -150,7 +150,7 @@ function watchFunction(descriptor, key) {
         if (key === 'addEventListener') {
             descriptor.value = new Proxy(descriptor.value, {
                 apply: (target, obj, args) => {
-                    args[1] = watchContext(`event ${args[0]}`, args[1]);
+                    args[1] = watchEvent(args[0], args[1]);
                     return Reflect.apply(target, obj, args);
                 }
             });
@@ -205,8 +205,9 @@ function watchFunction(descriptor, key) {
  * Wrap callbacks to track the start and end of execution contexts (e.g. event handlers).
  * @param {string} name The name of the context to log.
  * @param {Function} fn The callback invoked to start the context.
+ * @param {boolean} ignored Whether or not this context is ignored.
  */
-function watchContext(name, fn) {
+function watchContext(name, fn, ignored) {
     if (!fn) return fn;
 
     let proxy = fn;
@@ -217,9 +218,21 @@ function watchContext(name, fn) {
 
             apply: (target, obj, args) => {
 
-                new Trace().begin(name);
-                const result = Reflect.apply(target, obj, args);
-                new Trace().end();
+                let result;
+
+                if (ignored) {
+
+                    ignore(() => {
+                        result = Reflect.apply(target, obj, args);
+                    }, true);
+
+                } else {
+
+                    new Trace().begin(name);
+                    result = Reflect.apply(target, obj, args);
+                    new Trace().end();
+
+                }
 
                 return result;
             }
@@ -230,6 +243,28 @@ function watchContext(name, fn) {
     });
 
     return proxy;
+}
+
+/**
+ * List of events to automatically ignore when tracing.
+ * This helps create a more stable trace for comparisons.
+ * TODO: Make this configurable.
+ */
+const ignoredEvents = [
+    'mousemove',
+    'pointermove',
+    'touchmove'
+];
+
+/**
+ * Wrap event callbacks to track the start and end of execution contexts.
+ * @param {string} name The name of the event to log.
+ * @param {Function} fn The event callback.
+ */
+function watchEvent(name, fn) {
+    let ignored = false;
+    ignore(() => ignored = ignoredEvents.indexOf(name) !== -1);
+    return watchContext(`event ${name}`, fn, ignored);
 }
 
 /**

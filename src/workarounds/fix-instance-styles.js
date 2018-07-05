@@ -55,7 +55,7 @@ export default function fixInstanceStyles(fn) {
                     // And remember the mapping for future use.
                     mapStyleToProxy.set(style, proxy);
                 }
-            });
+            }, true);
 
             return proxy;
         }

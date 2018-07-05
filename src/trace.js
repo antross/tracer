@@ -70,12 +70,15 @@ const id = (obj) => {
  * Run a function ignoring any contained trace calls.
  * Will not run if trace calls are already being ignored.
  * @param {function} fn The function to run.
+ * @param {boolean} [alwaysRun=false] If `true`, run the function even if ignoring.
  */
-export function ignore(fn) {
+export function ignore(fn, alwaysRun) {
     if (!ignoring) {
         ignoring = true;
         fn();
         ignoring = false;
+    } else if (alwaysRun) {
+        fn();
     }
 }
 
