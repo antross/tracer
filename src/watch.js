@@ -148,6 +148,27 @@ function watchFunction(descriptor, key) {
             }
         });
 
+        // Work around missing properties on CSSStyleDeclaration in Chrome
+        if (key === 'getComputedStyle' && fixCSSStyleDeclaration) {
+            descriptor.value = new Proxy(descriptor.value, {
+                apply: (target, obj, args) => {
+                    const style = target.apply(obj, args);
+                    let proxy;
+                    ignore(() => {
+                        proxy = new Proxy(style, {
+                            get: (t, p) => {
+                                return new Trace().get(style, p, t[p]);
+                            },
+                            set: (t, p, v) => {
+                                return new Trace().set(style, p, v, t[p] = v);
+                            }
+                        });
+                    });
+                    return proxy;
+                }
+            })
+        }
+
         // Watch contexts for event listeners and known callbacks.
         if (key === 'addEventListener') {
             descriptor.value = new Proxy(descriptor.value, {

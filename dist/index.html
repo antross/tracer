@@ -21,6 +21,11 @@
                     button.setAttribute('type', 'button');
                     button.textContent = `Test ${Date.now()} ${Math.round(Math.random() * 10)} ${new Date()}`;
 
+                    const bodyStyle = getComputedStyle(document.body);
+                    button.style.backgroundColor = bodyStyle.backgroundColor;
+                    button.style.borderStyle = 'solid';
+                    button.style.color = bodyStyle.color;
+
                     if (i === 0) {
 
                         button.onclick = () => {
