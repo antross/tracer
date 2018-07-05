@@ -51,8 +51,6 @@ const id = (obj) => {
         return 'document';
 
     switch (typeof obj) {
-        case 'string':
-            return JSON.stringify(obj);
         case 'function':
             return (obj.name || `function() {}`);
         case 'object':
@@ -64,7 +62,7 @@ const id = (obj) => {
                     .replace(/^function ([^(]+)\(.+/, '$1') // Work around functions wrapped by 2+ proxies in Edge
             }
         default:
-            return `${obj}`;
+            return JSON.stringify(obj);
     }
 };
 
@@ -115,9 +113,10 @@ export default class Trace {
     get(obj, key, result) {
 
         ignore(() => {
-            let prefix = '';
+            let prefix = '', suffix = '';
+            const type = typeof result;
 
-            if (result && typeof result === 'object') {
+            if (result && type === 'object') {
 
                 if (created.has(result)) {
 
@@ -129,9 +128,14 @@ export default class Trace {
                     created.set(result, nextId++);
 
                 }
+
+            } else if (type !== 'undefined') {
+
+                suffix = ` === ${id(result)}`;
+
             }
 
-            actions[this.index] = `${indent}${prefix}${id(obj)}.${key};`;
+            actions[this.index] = `${indent}${prefix}${id(obj)}.${key}${suffix};`;
         });
 
         return result;
