@@ -1,7 +1,12 @@
 import fixInstanceStyles from './workarounds/fix-instance-styles.js';
-import Reflect from './mirror/Reflect';
 import Trace from './trace.js';
 import { ignore as i } from './trace.js';
+
+// Import mirrored types to avoid self-tracing.
+import Array from './mirror/Array';
+import Reflect from './mirror/Reflect';
+import WeakMap from './mirror/WeakMap';
+import WeakSet from './mirror/WeakSet';
 
 const ignore = i; // Workaround webpack adding Object() references which break tracking.
 
@@ -28,11 +33,11 @@ const mapProxyToFunction = new WeakMap();
  * This list should be as small as possible to reduce blind spots during tracing.
  * @type {string[]}
  */
-const exclude = [
+const exclude = new Array(
     'constructor',  // Was somehow wrapped for `Promise`, creating odd logs around `then` calls.
     'timing',       // Firefox throws errors using `performance.timing` as a `WeakMap` key.
     'navigation'    // Firefox throws errors using `performance.navigation` as a `WeakMap` key.
-];
+);
 
 /**
  * Track and log actions against the provided object.

@@ -1,3 +1,3 @@
 import mirror from './mirror';
 
-export default mirror(Reflect);
+export default mirror(Array);
