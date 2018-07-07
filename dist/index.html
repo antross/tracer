@@ -19,6 +19,7 @@
                 for (var i = 0; i < 2; i++) {
                     const button = document.createElement('button');
                     button.setAttribute('type', 'button');
+                    button.setAttribute('data-when', Date());
                     button.textContent = `Test ${Date.now()} ${Math.round(Math.random() * 10)} ${new Date()}`;
 
                     const bodyStyle = getComputedStyle(document.body);

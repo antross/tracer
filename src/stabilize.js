@@ -1,3 +1,10 @@
+
+// Cache native APIs used in shims to shield from overrides
+const NativeDate = Date;
+const apply = Reflect.apply;
+const construct = Reflect.construct;
+const Date_toString = Date.prototype.toString;
+
 /**
  * Stabilize platform behavior by overriding global, non-deterministic APIs.
  * Overridden APIs are altered to produce deterministic behavior.
@@ -19,9 +26,9 @@ export default function stabilize() {
         apply: () => now()
     });
 
-    Date = new Proxy(Date, {
-        apply: () => `${new Date()}`,
-        construct: (t, a, n) => Reflect.construct(t, a.length ? a : [now()], n)
+    Date = new Proxy(NativeDate, {
+        apply: () => apply(Date_toString, new NativeDate(now()), []),
+        construct: (t, a, n) => construct(t, a.length ? a : [now()], n)
     });
 
     // Make performance.now() increment by 100ms each call
