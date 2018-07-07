@@ -64,10 +64,9 @@ function mirrorFunction(NativeType, spawnMethods) {
     }
 
     // Copy NativeType properties to MirrorType (except `prototype`).
-    defineProperties(
-        MirrorType,
-        getOwnPropertyDescriptors(NativeType)
-    )
+    const descriptors = getOwnPropertyDescriptors(NativeType);
+    delete descriptors.prototype;
+    defineProperties(MirrorType, descriptors)
 
     // Copy NativeType prototype properties to the mirrored prototype.
     defineProperties(
