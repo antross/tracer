@@ -38,6 +38,8 @@
                             };
                         };
 
+                        document.body.appendChild(button);
+
                     } else {
 
                         button.onclick = () => {
@@ -50,9 +52,9 @@
                             ;
                         };
 
-                    }
+                        Reflect.apply(Node.prototype.appendChild, document.body, [button]);
 
-                    document.body.appendChild(button);
+                    }
                 }
 
                 setTimeout(() => document.querySelector('button').click(), 100);

@@ -58,6 +58,9 @@ const id = (obj) => {
     if (obj === document)
         return 'document';
 
+    if (obj === window.Reflect)
+        return 'Reflect';
+
     switch (typeof obj) {
 
         case 'function':
