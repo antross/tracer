@@ -258,6 +258,7 @@ function watchContext(name, fn, ignored) {
 const ignoredEvents = [
     'mousemove',
     'pointermove',
+    'scroll',
     'touchmove'
 ];
 
