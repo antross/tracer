@@ -1,9 +1,17 @@
+import Array from './mirror/Array.js';
+import JSON from './mirror/JSON.js';
+import Reflect from './mirror/Reflect.js';
+import String from './mirror/String.js';
+import WeakMap from './mirror/WeakMap.js';
+
+// Cached reference to stringify objects without self-tracing.
+const toString = Object.prototype.toString;
 
 /**
  * Log of actions performed during the trace.
  * @type {string[]}
  */
-export const actions = ['var o = [];'];
+export const actions = new Array('var o = [];');
 
 /**
  * Tracks seen objects to assign consistent IDs in the trace.
@@ -31,7 +39,7 @@ let indent = '';
  * @param {any[]} args The parameters to serialize.
  */
 const serializeArgs = (args) => {
-    let results = [];
+    let results = new Array();
     for (let i = 0; i < args.length; i++) {
         results.push(id(args[i]));
     }
@@ -51,16 +59,41 @@ const id = (obj) => {
         return 'document';
 
     switch (typeof obj) {
+
         case 'function':
             return (obj.name || `function() {}`);
+
         case 'object':
             if (created.has(obj)) {
+
                 return `o[${created.get(obj)}]`;
+
+            } else if (Array.isArray(obj)) {
+
+                return '[...]';
+
+            } else if (obj instanceof Function) {
+
+                // Work around functions wrapped by 2+ proxies in Edge.
+                return (obj.name || `function() {}`); 
+
             } else {
-                return `${obj}`
-                    .replace(/^\[object ([^\]]+)]$/, '$1') // Handle Math, etc.
-                    .replace(/^function ([^(]+)\(.+/, '$1') // Work around functions wrapped by 2+ proxies in Edge
+
+                // Carefully stringify the object to avoid self-tracing.
+                const s = Reflect.apply(toString, obj, []); 
+
+                if (s === '[object Object]') {
+
+                    return '{...}';
+
+                } else {
+
+                    // Handle Math, Reflect, etc.
+                    return new String(s).replace(/^\[object ([^\]]+)]$/, '$1');
+
+                }
             }
+
         default:
             return JSON.stringify(obj);
     }

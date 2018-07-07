@@ -1,3 +1,3 @@
 import mirror from './mirror.js';
 
-export default mirror(Reflect);
+export default mirror(JSON);
