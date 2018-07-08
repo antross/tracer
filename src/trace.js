@@ -1,11 +1,7 @@
 import Array from './mirror/Array.js';
 import JSON from './mirror/JSON.js';
-import Reflect from './mirror/Reflect.js';
 import String from './mirror/String.js';
 import WeakMap from './mirror/WeakMap.js';
-
-// Cached reference to stringify objects without self-tracing.
-const toString = Object.prototype.toString;
 
 /**
  * Log of actions performed during the trace.
@@ -38,19 +34,18 @@ let indent = '';
  * Helper to serialize function parameters to a string.
  * @param {any[]} args The parameters to serialize.
  */
-const serializeArgs = (args) => {
-    let results = new Array();
-    for (let i = 0; i < args.length; i++) {
-        results.push(id(args[i]));
-    }
-    return results.join(', ');
-};
+function serializeArgs(args) {
+    return new Array()
+        .concat(args)
+        .map(a => id(a))
+        .join(', ');
+}
 
 /**
  * Helper to get a string identifier for an object.
  * @param {any} obj The object to ID.
  */
-const id = (obj) => {
+function id(obj) {
 
     if (obj === window)
         return 'window';
@@ -58,13 +53,16 @@ const id = (obj) => {
     if (obj === document)
         return 'document';
 
+    if (obj === window.Math)
+        return 'Math';
+
     if (obj === window.Reflect)
         return 'Reflect';
 
     switch (typeof obj) {
 
         case 'function':
-            return (obj.name || `function() {}`);
+            return idFunction(obj);
 
         case 'object':
             if (created.has(obj)) {
@@ -78,29 +76,22 @@ const id = (obj) => {
             } else if (obj instanceof Function) {
 
                 // Work around functions wrapped by 2+ proxies in Edge.
-                return (obj.name || `function() {}`); 
+                return idFunction(obj);
 
             } else {
 
-                // Carefully stringify the object to avoid self-tracing.
-                const s = Reflect.apply(toString, obj, []); 
+                return '{...}';
 
-                if (s === '[object Object]') {
-
-                    return '{...}';
-
-                } else {
-
-                    // Handle Math, Reflect, etc.
-                    return new String(s).replace(/^\[object ([^\]]+)]$/, '$1');
-
-                }
             }
 
         default:
             return JSON.stringify(obj);
     }
-};
+}
+
+function idFunction(fn) {
+    return fn.name || 'function() {}';
+}
 
 /**
  * Run a function ignoring any contained trace calls.
@@ -123,11 +114,7 @@ export function ignore(fn, alwaysRun) {
  * @returns {string} A string with each logged action on its own line.
  */
 export function save() {
-    let result = '';
-    ignore(() => {
-        result = actions.join('\n');
-    });
-    return result;
+    return actions.join('\n');
 }
 
 /**
@@ -136,11 +123,7 @@ export function save() {
 export default class Trace {
 
     constructor() {
-        let index = 0;
-        ignore(() => {
-            index = actions.push('') - 1;
-        });
-        this.index = index;
+        this.index = ignoring ? 0 : actions.push('') - 1;
     }
 
     /**
@@ -151,7 +134,7 @@ export default class Trace {
      */
     get(obj, key, result) {
 
-        ignore(() => {
+        if (!ignoring) {
             let prefix = '', suffix = '';
             const type = typeof result;
 
@@ -175,7 +158,7 @@ export default class Trace {
             }
 
             actions[this.index] = `${indent}${prefix}${id(obj)}.${key}${suffix};`;
-        });
+        }
 
         return result;
     }
@@ -188,9 +171,9 @@ export default class Trace {
      * @param {any} result The returned value.
      */
     set(obj, key, value, result) {
-        ignore(() => {
+        if (!ignoring) {
             actions[this.index] = `${indent}${id(obj)}.${key} = ${id(value)};`;
-        });
+        }
         return result;
     };
 
@@ -203,7 +186,7 @@ export default class Trace {
      */
     apply(obj, key, args, result) {
 
-        ignore(() => {
+        if(!ignoring) {
             let prefix = '';
             let postfix = '';
             let type = typeof result;
@@ -216,7 +199,7 @@ export default class Trace {
             }
 
             actions[this.index] = `${indent}${prefix}${!obj ? '' : id(obj) + '.'}${key}(${serializeArgs(args)})${postfix};`;
-        });
+        }
 
         return result;
     }
@@ -229,11 +212,11 @@ export default class Trace {
      */
     construct(key, args, result) {
 
-        ignore(() => {
+        if (!ignoring) {
             created.set(result, nextId);
             actions[this.index] = `${indent}o[${nextId}] = new ${key}(${serializeArgs(args)});`;
             nextId++;
-        });
+        }
 
         return result;
     }
@@ -243,19 +226,19 @@ export default class Trace {
      * @param {string} name The name to display for the context.
      */
     begin(name) {
-        ignore(() => {
+        if (!ignoring) {
             actions[this.index] = `\n${indent}// ${name}\n${indent}{`;
             indent += '\t';
-        });
+        }
     }
 
     /**
      * Close the current wrapping context and remove the indent.
      */
     end() {
-        ignore(() => {
-            indent = indent.substr(1);
+        if (!ignoring) {
+            indent = new String(indent).substr(1);
             actions[this.index] = `${indent}}`;
-        });
+        }
     }
 }

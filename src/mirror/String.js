@@ -7,7 +7,7 @@ export default mirror(String, [
     'padEnd',
     'padStart',
     'repeat',
-    'replace',
+    'replace', // TODO: fix Symbol.replace causing self-tracing
     'slice',
     'substr',
     'substring',
