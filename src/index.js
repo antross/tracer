@@ -1,10 +1,11 @@
 import fixProxyToString from './workarounds/fix-proxy-tostring';
 import stabilize from './stabilize.js';
-import { ignore as i, save as s } from './trace.js';
+import { ignore as _ignore, save as _save } from './trace.js';
 import watch from './watch.js';
 
-const ignore = i;
-const save = s;
+// Workaround webpack adding Object() references which break tracking.
+const ignore = _ignore;
+const save = _save;
 
 fixProxyToString();
 stabilize();
