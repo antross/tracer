@@ -3,6 +3,7 @@ import WeakMap from '../mirror/WeakMap.js';
 
 /**
  * Polyfill Function.prototype.toString to handle Proxy correctly.
+ * TODO: change to an override for a `mirror/Proxy` type to avoid altering page behavior.
  */
 export default function fixProxyToString() {
 
