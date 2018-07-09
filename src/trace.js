@@ -3,11 +3,13 @@ import JSON from './mirror/JSON.js';
 import String from './mirror/String.js';
 import WeakMap from './mirror/WeakMap.js';
 
+const traceObjectIDs = false;
+
 /**
  * Log of actions performed during the trace.
  * @type {string[]}
  */
-export const actions = new Array('var o = [];');
+const actions = new Array('var o = [];');
 
 /**
  * Tracks seen objects to assign consistent IDs in the trace.
@@ -72,27 +74,32 @@ function id(obj) {
             return idFunction(obj);
 
         case 'object':
-            if (created.has(obj)) {
-
-                return `o[${created.get(obj)}]`;
-
-            } else if (Array.isArray(obj)) {
-
-                return '[...]';
-
-            } else if (obj instanceof Function) {
-
-                // Work around functions wrapped by 2+ proxies in Edge.
-                return idFunction(obj);
-
-            } else {
-
-                return '{...}';
-
-            }
+            return idObject(obj);
 
         default:
             return JSON.stringify(obj);
+    }
+}
+
+function idObject(obj) {
+
+    if (traceObjectIDs && created.has(obj)) {
+
+        return `o[${created.get(obj)}]`;
+
+    } else if (Array.isArray(obj)) {
+
+        return '[...]';
+
+    } else if (obj instanceof Function) {
+
+        // Work around functions wrapped by 2+ proxies in Edge.
+        return idFunction(obj);
+
+    } else {
+
+        return '{...}';
+
     }
 }
 
@@ -152,8 +159,9 @@ export default class Trace {
 
                 } else {
 
-                    prefix = `o[${nextId}] = `;
                     created.set(result, nextId++);
+
+                    prefix = `${id(result)} = `;
 
                 }
 
@@ -198,8 +206,8 @@ export default class Trace {
             let type = typeof result;
 
             if (result && type === 'object' && !created.has(result)) {
-                prefix = `o[${nextId}] = `;
                 created.set(result, nextId++);
+                prefix = `${id(result)} = `;
             } else if (type !== 'undefined') {
                 postfix = ` === ${id(result)}`;
             }
@@ -220,7 +228,7 @@ export default class Trace {
 
         if (!ignoring) {
             created.set(result, nextId);
-            actions[this.index] = `${indent}o[${nextId}] = new ${key}(${serializeArgs(args)});`;
+            actions[this.index] = `${indent}${id(result)} = new ${key}(${serializeArgs(args)});`;
             nextId++;
         }
 
