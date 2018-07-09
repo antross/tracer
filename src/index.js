@@ -22,4 +22,4 @@ document.addEventListener('click', () => {
     });
 });
 
-ignore(() => watch('', window));
+ignore(() => watch(window));

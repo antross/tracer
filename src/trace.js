@@ -102,16 +102,15 @@ function idFunction(fn) {
 
 /**
  * Run a function ignoring any contained trace calls.
- * Will not run if trace calls are already being ignored.
+ * Used to ignore blocks of page execution (e.g. inside a `mousemove` listener).
  * @param {function} fn The function to run.
- * @param {boolean} [alwaysRun=false] If `true`, run the function even if ignoring.
  */
-export function ignore(fn, alwaysRun) {
+export function ignore(fn) {
     if (!ignoring) {
         ignoring = true;
         fn();
         ignoring = false;
-    } else if (alwaysRun) {
+    } else {
         fn();
     }
 }

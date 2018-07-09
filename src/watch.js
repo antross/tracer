@@ -1,14 +1,19 @@
-import fixInstanceStyles from './workarounds/fix-instance-styles.js';
+import _fixInstanceStyles from './workarounds/fix-instance-styles.js';
 import Trace from './trace.js';
-import { ignore as i } from './trace.js';
+import { ignore as _ignore } from './trace.js';
 
 // Import mirrored types to avoid self-tracing.
-import Array from './mirror/Array';
-import Reflect from './mirror/Reflect';
-import WeakMap from './mirror/WeakMap';
-import WeakSet from './mirror/WeakSet';
+import Array from './mirror/Array.js';
+import Object from './mirror/Object.js';
+import Proxy from './mirror/Proxy.js';
+import Reflect from './mirror/Reflect.js';
+import String from './mirror/String.js';
+import WeakMap from './mirror/WeakMap.js';
+import WeakSet from './mirror/WeakSet.js';
 
-const ignore = i; // Workaround webpack adding Object() references which break tracking.
+// Workaround webpack adding Object() references which break tracking.
+const ignore = _ignore; 
+const fixInstanceStyles = _fixInstanceStyles;
 
 /**
  * Collection to remember tracked objects ensuring they are only wrapped once.
@@ -41,26 +46,30 @@ const exclude = new Array(
 
 /**
  * Track and log actions against the provided object.
- * @param {string} path The path to display in logs.
  * @param {any} obj The object to track.
+ * @param {string} [path=''] The path to display in logs.
  */
-export default function watch(path, obj) {
+export default function watch(obj, path) {
     if (!obj || tracked.has(obj))
         return; // Ignore empty values and objects which have already been tracked.
+
+    path = path || '';
 
     // Mark this object as tracked.
     tracked.add(obj);
 
     const prefix = path ? `${path}.` : '';
     const descriptors = Object.getOwnPropertyDescriptors(obj);
-    const keys = Object.keys(descriptors).filter(k => k[0] !== '$' && exclude.indexOf(k) === -1);
+    const keys = new Array()
+        .concat(Object.keys(descriptors))
+        .filter(k => k[0] !== '$' && exclude.indexOf(k) === -1);
 
     keys.forEach(key => {
         const descriptor = descriptors[key];
 
         // Recursively wrap functions and objects
         if (typeof descriptor.value === "function" || typeof descriptor.value === "object") {
-            watch(prefix + key, descriptor.value);
+            watch(descriptor.value, prefix + key);
         }
 
         //  Wrap all configurable getters, setters, and function values
@@ -88,7 +97,7 @@ function watchGetter(descriptor, key) {
         });
 
         // Watch contexts for event listeners.
-        if (/^on/.test(key)) {
+        if (new String(key).startsWith('on')) {
             descriptor.get = new Proxy(descriptor.get, {
                 apply: (target, obj, args) => {
                     args[0] = getFunctionFor(args[0]);
@@ -118,8 +127,8 @@ function watchSetter(descriptor, key) {
         });
 
         // Watch contexts for event listeners.
-        if (/^on/.test(key)) {
-            const name = key.substr(2);
+        if (new String(key).startsWith('on')) {
+            const name = new String(key).substr(2);
             descriptor.set = new Proxy(descriptor.set, {
                 apply: (target, obj, args) => {
                     args[0] = watchEvent(name, args[0]);
@@ -215,37 +224,31 @@ function watchFunction(descriptor, key) {
 function watchContext(name, fn, ignored) {
     if (!fn) return fn;
 
-    let proxy = fn;
+    let proxy = new Proxy(fn, {
 
-    ignore(() => {
+        apply: (target, obj, args) => {
+            let result;
 
-        proxy = new Proxy(fn, {
+            if (ignored) {
 
-            apply: (target, obj, args) => {
-
-                let result;
-
-                if (ignored) {
-
-                    ignore(() => {
-                        result = Reflect.apply(target, obj, args);
-                    }, true);
-
-                } else {
-
-                    new Trace().begin(name);
+                ignore(() => {
                     result = Reflect.apply(target, obj, args);
-                    new Trace().end();
+                });
 
-                }
+            } else {
 
-                return result;
+                new Trace().begin(name);
+                result = Reflect.apply(target, obj, args);
+                new Trace().end();
+
             }
-        });
 
-        mapFunctionToProxy.set(fn, proxy);
-        mapProxyToFunction.set(proxy, fn);
+            return result;
+        }
     });
+
+    mapFunctionToProxy.set(fn, proxy);
+    mapProxyToFunction.set(proxy, fn);
 
     return proxy;
 }
@@ -255,12 +258,12 @@ function watchContext(name, fn, ignored) {
  * This helps create a more stable trace for comparisons.
  * TODO: Make this configurable.
  */
-const ignoredEvents = [
+const ignoredEvents = new Array(
     'mousemove',
     'pointermove',
     'scroll',
     'touchmove'
-];
+);
 
 /**
  * Wrap event callbacks to track the start and end of execution contexts.
@@ -268,8 +271,7 @@ const ignoredEvents = [
  * @param {Function} fn The event callback.
  */
 function watchEvent(name, fn) {
-    let ignored = false;
-    ignore(() => ignored = ignoredEvents.indexOf(name) !== -1);
+    let ignored = ignoredEvents.indexOf(name) !== -1;
     return watchContext(`event ${name}`, fn, ignored);
 }
 
@@ -279,11 +281,7 @@ function watchEvent(name, fn) {
  * @param {Function} fn The previously wrapped function.
  */
 function getProxyFor(fn) {
-    let proxy = fn;
-
-    ignore(() => proxy = (mapFunctionToProxy.get(fn) || fn));
-
-    return proxy;
+    return mapFunctionToProxy.get(fn) || fn;
 }
 
 /**
@@ -292,9 +290,5 @@ function getProxyFor(fn) {
  * @param {Proxy} proxy 
  */
 function getFunctionFor(proxy) {
-    let fn = proxy;
-
-    ignore(() => fn = (mapProxyToFunction.get(proxy) || proxy));
-
-    return fn;
+    return mapProxyToFunction.get(proxy) || proxy;
 }
