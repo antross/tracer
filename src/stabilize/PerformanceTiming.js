@@ -1,4 +1,5 @@
 import {now} from './Date.js';
+import Proxy from '../mirror/Proxy.js';
 
 /**
  * List of timings in the order they are expected to occur.

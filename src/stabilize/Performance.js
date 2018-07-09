@@ -1,3 +1,4 @@
+import Proxy from '../mirror/Proxy.js';
 
 /**
  * Override `performance.now()` to increment by 100.1ms each call.

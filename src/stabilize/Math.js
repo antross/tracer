@@ -1,3 +1,4 @@
+import Proxy from '../mirror/Proxy.js';
 
 /**
  * Override `Math.random()` to step from 0 to 1 in 0.01 increments, then repeat.

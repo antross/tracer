@@ -1,7 +1,8 @@
+import Proxy from '../mirror/Proxy.js';
+import Reflect from '../mirror/Reflect.js';
+
 // Cache native APIs used in shims to shield from overrides
 const NativeDate = Date;
-const apply = Reflect.apply;
-const construct = Reflect.construct;
 const Date_toString = Date.prototype.toString;
 
 /**
@@ -27,8 +28,8 @@ export default function stabilize() {
     });
 
     Date = new Proxy(NativeDate, {
-        apply: () => apply(Date_toString, new NativeDate(now()), []),
-        construct: (t, a, n) => construct(t, a.length ? a : [now()], n)
+        apply: () => Reflect.apply(Date_toString, new NativeDate(now()), []),
+        construct: (t, a, n) => Reflect.construct(t, a.length ? a : [now()], n)
     });
 
 }
