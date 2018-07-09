@@ -68,11 +68,20 @@ function mirrorFunction(NativeType, spawnMethods) {
     delete descriptors.prototype;
     defineProperties(MirrorType, descriptors)
 
-    // Copy NativeType prototype properties to the mirrored prototype.
-    defineProperties(
-        MirrorType.prototype,
-        getOwnPropertyDescriptors(NativeType.prototype)
-    );
+    if (NativeType.prototype) {
+
+        // Copy NativeType prototype properties to the mirrored prototype.
+        defineProperties(
+            MirrorType.prototype,
+            getOwnPropertyDescriptors(NativeType.prototype)
+        );
+
+    } else {
+
+        // Special-case `Proxy` to `undefined`.
+        MirrorType.prototype = NativeType.prototype;
+
+    }
 
     // Handle methods which return new instances of NativeType.
     if (spawnMethods) {
@@ -86,7 +95,9 @@ function mirrorFunction(NativeType, spawnMethods) {
  * Ties the provided native instance to the specified mirrored type.
  */
 function mirrorInstance(MirrorType, nativeInstance) {
-    apply(__proto__set, nativeInstance, [MirrorType.prototype]);
+    if (MirrorType.prototype) {
+        apply(__proto__set, nativeInstance, [MirrorType.prototype]);
+    }
     return nativeInstance;
 }
 

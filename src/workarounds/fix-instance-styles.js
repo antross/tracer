@@ -1,9 +1,7 @@
+import Proxy from '../mirror/Proxy.js';
 import Reflect from '../mirror/Reflect.js';
 import Trace from '../trace.js';
 import WeakMap from '../mirror/WeakMap.js';
-import { ignore as i } from '../trace.js';
-
-const ignore = i; // Workaround webpack adding Object() references which break tracking.
 
 /**
  * Is true if CSS properties are missing from CSSStyleDeclaration.prototype (Chrome bug).
@@ -36,27 +34,24 @@ export default function fixInstanceStyles(fn) {
             // When retrieving a CSSStyleDeclaration instance...
             const style = Reflect.apply(target, obj, args);
 
-            ignore(() => {
+            // Return an existing proxy if we've already wrapped it.
+            proxy = mapStyleToProxy.get(style);
 
-                // Return an existing proxy if we've already wrapped it.
-                proxy = mapStyleToProxy.get(style);
+            if (!proxy) {
 
-                if (!proxy) {
+                // Otherwise create a new proxy to track gets/sets.
+                proxy = new Proxy(style, {
+                    get: (t, p) => {
+                        return new Trace().get(style, p, t[p]);
+                    },
+                    set: (t, p, v) => {
+                        return new Trace().set(style, p, v, t[p] = v);
+                    }
+                });
 
-                    // Otherwise create a new proxy to track gets/sets.
-                    proxy = new Proxy(style, {
-                        get: (t, p) => {
-                            return new Trace().get(style, p, t[p]);
-                        },
-                        set: (t, p, v) => {
-                            return new Trace().set(style, p, v, t[p] = v);
-                        }
-                    });
-
-                    // And remember the mapping for future use.
-                    mapStyleToProxy.set(style, proxy);
-                }
-            }, true);
+                // And remember the mapping for future use.
+                mapStyleToProxy.set(style, proxy);
+            }
 
             return proxy;
         }
