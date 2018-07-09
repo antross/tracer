@@ -16,6 +16,21 @@ export const actions = new Array('var o = [];');
 const created = new WeakMap();
 
 /**
+ * Map of global static object names (`JSON`, `Math`, etc.)
+ * @type {WeakMap<any, string>}
+ */
+const staticGlobals = new WeakMap([
+    [window.console, 'console'],
+    [window.document, 'document'],
+    [window, 'window'],
+    [window.Intl, 'Intl'],
+    [window.JSON, 'JSON'],
+    [window.Math, 'Math'],
+    [window.Reflect, 'Reflect'],
+    [window.WebAssembly, 'WebAssembly']
+]);
+
+/**
  * Flag to (temporarily) disable tracing.
  */
 let ignoring = false;
@@ -47,17 +62,9 @@ function serializeArgs(args) {
  */
 function id(obj) {
 
-    if (obj === window)
-        return 'window';
-
-    if (obj === document)
-        return 'document';
-
-    if (obj === window.Math)
-        return 'Math';
-
-    if (obj === window.Reflect)
-        return 'Reflect';
+    const globalName = staticGlobals.get(obj);
+    if (globalName)
+        return globalName;
 
     switch (typeof obj) {
 
