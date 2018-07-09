@@ -1,4 +1,3 @@
-import fixProxyToString from './workarounds/fix-proxy-tostring';
 import stabilize from './stabilize.js';
 import { ignore as _ignore, save as _save } from './trace.js';
 import watch from './watch.js';
@@ -7,7 +6,6 @@ import watch from './watch.js';
 const ignore = _ignore;
 const save = _save;
 
-fixProxyToString();
 stabilize();
 
 console.log('API Tracer: Tracing script loaded. Watching API calls...');
