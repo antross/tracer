@@ -1,4 +1,5 @@
 import Reflect from '../mirror/Reflect.js';
+import WeakMap from '../mirror/WeakMap.js';
 
 /**
  * Polyfill Function.prototype.toString to handle Proxy correctly.

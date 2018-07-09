@@ -1,5 +1,6 @@
 import Reflect from '../mirror/Reflect.js';
 import Trace from '../trace.js';
+import WeakMap from '../mirror/WeakMap.js';
 import { ignore as i } from '../trace.js';
 
 const ignore = i; // Workaround webpack adding Object() references which break tracking.
