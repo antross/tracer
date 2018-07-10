@@ -10,6 +10,11 @@ import WeakMap from '../mirror/WeakMap.js';
 const hasInstanceStyles = !('color' in CSSStyleDeclaration.prototype || (window.CSS2Properties && 'color' in CSS2Properties.prototype));
 
 /**
+ * Cache a reference to `CSSStyleDeclaration.prototype` for future use.
+ */
+const styleProto = CSSStyleDeclaration.prototype;
+
+/**
  * Keeps track of proxies used to wrap CSSStyleDeclaration objects.
  * @type {WeakMap<CSSStyleDeclaration, Proxy>}
  */
@@ -48,10 +53,18 @@ export default function fixInstanceStyles(fn) {
                 // Otherwise create a new proxy to track gets/sets.
                 proxy = new Proxy(style, {
                     get: (t, p) => {
+                        // Avoid tracing properties that are actually in the prototype chain.
+                        if (p in styleProto) return t[p];
+
+                        // Otherwise trace a getter call for the property.
                         return new Trace().get(style, p, t[p]);
                     },
                     set: (t, p, v) => {
-                        return new Trace().set(style, p, v, t[p] = v);
+                        // Avoid tracing properties that are actually in the prototype chain.
+                        if (p in styleProto) return t[p] = v;
+
+                        // Otherwise trace a setter call for the property. 
+                        return p in styleProto ? t[p] : new Trace().set(style, p, v, t[p] = v);
                     }
                 });
 
