@@ -6,18 +6,46 @@ import watch from './watch.js';
 const ignore = _ignore;
 const save = _save;
 
+const _createObjectURL = URL.createObjectURL;
+const _setTimeout = setTimeout;
+
 stabilize();
 
 console.log('API Tracer: Tracing script loaded. Watching API calls...');
 
-document.addEventListener('click', () => {
-    const log = save();
+window.addEventListener('load', () => {
     ignore(() => {
-        if (document.title === 'Trace Test') {
-            document.querySelector('pre').textContent = log;
-        } else {
-            console.log('// API Trace\n' + log);
-        }
+        _setTimeout(() => {
+            const log = save();
+            ignore(() => {
+                if (document.title === 'Trace Test') {
+                    document.querySelector('pre').textContent = log;
+                } else {
+                    const file = new Blob([log], { type: 'text/plain' });
+                    const url = _createObjectURL(file);
+                    const a = document.createElement('a');
+
+                    const ua = navigator.userAgent;
+                    const browser = /\bEdge\b/.test(ua) ? 'edge' : 
+                        /\bFirefox\b/.test(ua) ? 'firefox' :
+                        /\bChrome\b/.test(ua) ? 'chrome' :
+                        /\bSafari\b/.test(ua) ? 'safari' : 
+                        'unknown';
+
+                    a.href = url;
+                    a.download = `${browser}-trace.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+
+                    _setTimeout(() => {
+                        ignore(() => {
+                            a.remove();
+                            URL.revokeObjectURL(url);
+                        });
+                    }, 10);
+                }
+            });
+        }, 500);
     });
 });
 
