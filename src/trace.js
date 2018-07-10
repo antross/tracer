@@ -23,6 +23,7 @@ const created = new WeakMap();
  */
 const staticGlobals = new WeakMap([
     [window.console, 'console'],
+    [window.CSS, 'CSS'],
     [window.document, 'document'],
     [window, 'window'],
     [window.Intl, 'Intl'],
