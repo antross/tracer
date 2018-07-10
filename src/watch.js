@@ -14,7 +14,6 @@ import WeakSet from './mirror/WeakSet.js';
 // Workaround webpack adding Object() references which break tracking.
 const ignore = _ignore; 
 const fixInstanceStyles = _fixInstanceStyles;
-const log = console.log;
 
 /**
  * Collection to remember tracked objects ensuring they are only wrapped once.
@@ -192,7 +191,6 @@ function watchFunction(descriptor, key, path) {
             for (let prop in props) {
                 const desc = props[prop];
                 if (desc.configurable && typeof desc.value === 'function') {
-                    log(`Patching global: ${key}`);
                     mapGlobalProxyToFunction.set(descriptor.value, value);
                     break;
                 }
@@ -203,7 +201,6 @@ function watchFunction(descriptor, key, path) {
         // Chrome throws an exception if `this` is a proxy in these cases; other browsers do not.
         // Only applies when one of our proxies is the current `this` to avoid altering native behavior.
         if (path && jsTypes.indexOf(path) === -1 && new String(path).indexOf('prototype') === -1) {
-            log(`Patching method on global: ${path}.${key}`);
             descriptor.value = new Proxy(descriptor.value, {
                 apply: (target, obj, args) => {
                     return Reflect.apply(target, mapGlobalProxyToFunction.get(obj) || obj, args);
