@@ -1,3 +1,4 @@
+import normalize from './normalize.js';
 import stabilize from './stabilize.js';
 import { ignore as _ignore, save as _save } from './trace.js';
 import watch from './watch.js';
@@ -9,6 +10,7 @@ const save = _save;
 const _createObjectURL = URL.createObjectURL;
 const _setTimeout = setTimeout;
 
+normalize();
 stabilize();
 
 console.log('API Tracer: Tracing script loaded. Watching API calls...');
