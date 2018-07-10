@@ -2,6 +2,7 @@ import mirror from './mirror.js';
 import Reflect from './Reflect.js';
 import WeakMap from './WeakMap.js';
 
+// TODO: generically fix incorrect `this` for native prototype methods when wrapping instances in a proxy (see fix-instance-styles.js workaround).
 let MirrorProxy = mirror(Proxy);
 
 /**

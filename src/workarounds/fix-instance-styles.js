@@ -16,6 +16,12 @@ const hasInstanceStyles = !('color' in CSSStyleDeclaration.prototype || (window.
 const mapStyleToProxy = new WeakMap();
 
 /**
+ * Keeps track of proxies used to wrap CSSStyleDeclaration objects.
+ * @type {WeakMap<Proxy, CSSStyleDeclaration>}
+ */
+const mapProxyToStyle = new WeakMap();
+
+/**
  * Wrap the provided getter or value function to track instance styles.
  * Works around Chrome omitting CSS properties from the prototype chain.
  * @param {Function} fn The function returning a CSSStyleDeclaration to wrap.
@@ -51,9 +57,31 @@ export default function fixInstanceStyles(fn) {
 
                 // And remember the mapping for future use.
                 mapStyleToProxy.set(style, proxy);
+                mapProxyToStyle.set(proxy, style);
             }
 
             return proxy;
+        }
+    });
+}
+
+// Re-wire `CSSStyleDeclaration.prototype` methods to point to the correct `this` when fix is in effect.
+// TODO: make this generic as part of `MirrorProxy`.
+if (hasInstanceStyles) {
+
+    const proto = CSSStyleDeclaration.prototype;
+    const descriptors = Object.getOwnPropertyDescriptors(proto);
+
+    Object.keys(descriptors).forEach(name => {
+        const descriptor = descriptors[name];
+
+        if (typeof descriptor.value === 'function') {
+
+            proto[name] = new Proxy(proto[name], {
+                apply: (target, obj, args) => {
+                    return Reflect.apply(target, mapProxyToStyle.get(obj), args);
+                }
+            });
         }
     });
 }
