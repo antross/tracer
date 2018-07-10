@@ -14,11 +14,17 @@ import WeakSet from './mirror/WeakSet.js';
 // Workaround webpack adding Object() references which break tracking.
 const ignore = _ignore; 
 const fixInstanceStyles = _fixInstanceStyles;
+const log = console.log;
 
 /**
  * Collection to remember tracked objects ensuring they are only wrapped once.
  */
 const tracked = new WeakSet();
+
+/**
+ * Collection of created proxies used to for correcting `this` when needed.
+ */
+const mapGlobalProxyToFunction = new WeakMap();
 
 /**
  * Tracks event listeners to establish trace context.
@@ -42,6 +48,27 @@ const exclude = new Array(
     'constructor',  // Was somehow wrapped for `Promise`, creating odd logs around `then` calls.
     'timing',       // Firefox throws errors using `performance.timing` as a `WeakMap` key.
     'navigation'    // Firefox throws errors using `performance.navigation` as a `WeakMap` key.
+);
+
+/**
+ * List of built-in script types whose methods work with any `this` value.
+ * Used to exclude these objects from `mapGlobalProxyToFunction`.
+ */
+const jsTypes = new Array(
+    'console',
+    'Array',
+    'Date',
+    'Error',
+    'JSON',
+    'Math',
+    'Number',
+    'Object',
+    'Promise',
+    'Proxy',
+    'Reflect',
+    'String',
+    'Symbol',
+    'RegExp'
 );
 
 /**
@@ -76,7 +103,7 @@ export default function watch(obj, path) {
         if (descriptor.configurable) {
             watchGetter(descriptor, key);
             watchSetter(descriptor, key);
-            watchFunction(descriptor, key);
+            watchFunction(descriptor, key, path);
 
             Object.defineProperty(obj, key, descriptor);
         }
@@ -143,13 +170,14 @@ function watchSetter(descriptor, key) {
  * Wrap and log calls to value of the provided descriptor if it is a function.
  * @param {any} descriptor The descriptor whose value to wrap.
  * @param {string} key The name of the property.
+ * @param {string} path The global path to the object this function lives on (e.g. `Node.prototype`).
  */
-function watchFunction(descriptor, key) {
-    if (key === 'CSS')
-        return; // Avoid `this` issues in Chrome where global `CSS` object is incorrectly exposed as a function.
+function watchFunction(descriptor, key, path) {
 
-    if (descriptor.value && typeof descriptor.value === 'function') {
-        descriptor.value = new Proxy(descriptor.value, {
+    const value = descriptor.value;
+    if (value && typeof value === 'function') {
+
+        descriptor.value = new Proxy(value, {
             apply: (target, obj, args) => {
                 return new Trace().apply(obj, key, args, Reflect.apply(target, obj, args));
             },
@@ -157,6 +185,31 @@ function watchFunction(descriptor, key) {
                 return new Trace().construct(key, args, Reflect.construct(target, args, newTarget));
             }
         });
+
+        // Save mappings for proxied global, static functions with methods (e.g. `CSS`, `URL`, and `Date`).
+        if ((path || jsTypes.indexOf(key) === -1) && new String(path).indexOf('prototype') === -1) {
+            const props = Object.getOwnPropertyDescriptors(value);
+            for (let prop in props) {
+                const desc = props[prop];
+                if (desc.configurable && typeof desc.value === 'function') {
+                    log(`Patching global: ${key}`);
+                    mapGlobalProxyToFunction.set(descriptor.value, value);
+                    break;
+                }
+            }
+        }
+
+        // Fix `this` for watched native static methods (e.g. `URL.createObjectURL`) in Chrome.
+        // Chrome throws an exception if `this` is a proxy in these cases; other browsers do not.
+        // Only applies when one of our proxies is the current `this` to avoid altering native behavior.
+        if (path && jsTypes.indexOf(path) === -1 && new String(path).indexOf('prototype') === -1) {
+            log(`Patching method on global: ${path}.${key}`);
+            descriptor.value = new Proxy(descriptor.value, {
+                apply: (target, obj, args) => {
+                    return Reflect.apply(target, mapGlobalProxyToFunction.get(obj) || obj, args);
+                }
+            });
+        }
 
         // Work around missing properties on CSSStyleDeclaration in Chrome
         if (key === 'getComputedStyle') {
