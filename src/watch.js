@@ -164,6 +164,7 @@ function watchFunction(descriptor, key) {
         }
 
         // Watch contexts for event listeners and known callbacks.
+        // TODO: create a helper method to reduce duplicate code.
         if (key === 'addEventListener') {
             descriptor.value = new Proxy(descriptor.value, {
                 apply: (target, obj, args) => {
@@ -175,6 +176,13 @@ function watchFunction(descriptor, key) {
             descriptor.value = new Proxy(descriptor.value, {
                 apply: (target, obj, args) => {
                     args[1] = getProxyFor(args[1]);
+                    return Reflect.apply(target, obj, args);
+                }
+            });
+        } else if (key === 'requestAnimationFrame') {
+            descriptor.value = new Proxy(descriptor.value, {
+                apply: (target, obj, args) => {
+                    args[0] = watchContext(`animation frame`, args[0]);
                     return Reflect.apply(target, obj, args);
                 }
             });
