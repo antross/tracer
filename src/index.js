@@ -45,7 +45,7 @@ window.addEventListener('load', () => {
                     }, 10);
                 }
             });
-        }, 500);
+        }, 1000);
     });
 });
 
