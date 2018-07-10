@@ -13,10 +13,13 @@
     <body>
         <script>
             document.body.style.fontSize = '11px';
-            document.body.style.getPropertyValue('font-size');
 
-            document.getElementsByClassName + '';
+            // Exercise special code paths
+            document.body.style.getPropertyValue('font-size'); // Proxy of instance `this` in Chrome (due to fix-instance-styles)
+            document.getElementsByClassName + ''; // `toString` of proxy of a function
+            CSS.supports('foo'); // Proxy of static `this` in Chrome (due to incorrect definition as "function")
 
+            // Ensure unstable events are excluded
             window.addEventListener('mousemove', () => {
                 console.log('mousemove!');
             });

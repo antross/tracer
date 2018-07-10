@@ -145,6 +145,9 @@ function watchSetter(descriptor, key) {
  * @param {string} key The name of the property.
  */
 function watchFunction(descriptor, key) {
+    if (key === 'CSS')
+        return; // Avoid `this` issues in Chrome where global `CSS` object is incorrectly exposed as a function.
+
     if (descriptor.value && typeof descriptor.value === 'function') {
         descriptor.value = new Proxy(descriptor.value, {
             apply: (target, obj, args) => {
