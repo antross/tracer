@@ -17,4 +17,12 @@ export default function normalize() {
             return result;
         }
     });
+
+    String.prototype.replace = new Proxy(String.prototype.replace, {
+        apply: (target, obj, args) => {
+            let result;
+            ignore(() => result = Reflect.apply(target, obj, args));
+            return result;
+        }
+    });
 }
