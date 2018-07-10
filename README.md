@@ -1,5 +1,12 @@
 # tracer
 
+A library and collection of browser extensions for tracing the execution flow
+of web pages running in the browser. These traces are stabilized against
+non-deterministic behavior and normalized where minor "safe" differences occur.
+Resulting traces can be loaded in a "diff" utility to look for differences
+between browsers. Ultimately the goal is to simplify discovering the root cause
+of site compatibility issues which occur in some, but not all major browsers.
+
 ## Interoperability
 
 A collection of interoperability differences found while building this project.
@@ -16,6 +23,9 @@ A collection of interoperability differences found while building this project.
 2. In Chrome and Firefox, `String.prototype.match()` invokes
    `RegExp.prototype.global` and `RegExp.prototype.exec()` when called.
    Edge does not.
+3. In Chrome and Firefox, `String.prototype.replace()` invokes
+   `RegExp.prototype.global`, `RegExp.prototype.unicode`, and
+   `RegExp.prototype.exec()` when called. Edge does not.
 
 ### `CSSStyleDeclaration.prototype`
 
@@ -54,3 +64,8 @@ A collection of interoperability differences found while building this project.
 1. In Firefox, `Function.prototype.toString()` places the text `[native code]`
    indented on a separate line. Edge and Chrome print it on a single line
    surrounded by spaces.
+
+### `document.implementation`
+
+1. In Edge, `document.implementation` returns a new instance each call.
+   Chrome and Firefox return the same instance each call.
