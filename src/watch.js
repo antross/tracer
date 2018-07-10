@@ -21,11 +21,6 @@ const fixInstanceStyles = _fixInstanceStyles;
 const tracked = new WeakSet();
 
 /**
- * Collection of created proxies used to for correcting `this` when needed.
- */
-const mapGlobalProxyToFunction = new WeakMap();
-
-/**
  * Tracks event listeners to establish trace context.
  * @type {WeakMap<Function, Proxy>}
  */
@@ -50,25 +45,49 @@ const exclude = new Array(
 );
 
 /**
- * List of built-in script types whose methods work with any `this` value.
- * Used to exclude these objects from `mapGlobalProxyToFunction`.
+ * List of built-in functions with static methods that work with any `this` value.
+ * Used to exclude these objects from `fixStaticThis()`.
  */
 const jsTypes = new Array(
-    'console',
     'Array',
     'Date',
     'Error',
-    'JSON',
-    'Math',
     'Number',
     'Object',
     'Promise',
     'Proxy',
-    'Reflect',
     'String',
     'Symbol',
     'RegExp'
 );
+
+/**
+ * Fix `this` for watched native static methods (e.g. `URL.createObjectURL`) in Chrome.
+ * Chrome throws an exception if `this` is a proxy in these cases; other browsers do not.
+ * Only applies when one of our proxies is the current `this` to avoid altering native behavior.
+ */
+function fixStaticThis(proxy, native, key, path) {
+    if (jsTypes.indexOf(key) !== -1 || new String(path).indexOf('prototype') !== -1)
+        return; // Only fix global functions with static methods.
+
+    const descriptors = Object.getOwnPropertyDescriptors(native);
+
+    for (let prop in descriptors) {
+        const descriptor = descriptors[prop];
+
+        if (descriptor.configurable && typeof descriptor.value === 'function') {
+
+            // Re-wire `this` when a static method is invoked to point to the native object.
+            descriptor.value = new Proxy(descriptor.value, {
+                apply: (target, obj, args) => {
+                    return Reflect.apply(target, obj === proxy ? native : obj, args);
+                }
+            });
+
+            Object.defineProperty(native, prop, descriptor);
+        }
+    }
+}
 
 /**
  * Track and log actions against the provided object.
@@ -93,11 +112,6 @@ export default function watch(obj, path) {
     keys.forEach(key => {
         const descriptor = descriptors[key];
 
-        // Recursively wrap functions and objects
-        if (typeof descriptor.value === "function" || typeof descriptor.value === "object") {
-            watch(descriptor.value, prefix + key);
-        }
-
         //  Wrap all configurable getters, setters, and function values
         if (descriptor.configurable) {
             watchGetter(descriptor, key);
@@ -105,6 +119,11 @@ export default function watch(obj, path) {
             watchFunction(descriptor, key, path);
 
             Object.defineProperty(obj, key, descriptor);
+        }
+
+        // Recursively wrap functions and objects
+        if (typeof descriptor.value === "function" || typeof descriptor.value === "object") {
+            watch(descriptor.value, prefix + key);
         }
     });
 }
@@ -176,7 +195,7 @@ function watchFunction(descriptor, key, path) {
     const value = descriptor.value;
     if (value && typeof value === 'function') {
 
-        descriptor.value = new Proxy(value, {
+        const proxy = descriptor.value = new Proxy(value, {
             apply: (target, obj, args) => {
                 return new Trace().apply(obj, key, args, Reflect.apply(target, obj, args));
             },
@@ -185,28 +204,7 @@ function watchFunction(descriptor, key, path) {
             }
         });
 
-        // Save mappings for proxied global, static functions with methods (e.g. `CSS`, `URL`, and `Date`).
-        if ((path || jsTypes.indexOf(key) === -1) && new String(path).indexOf('prototype') === -1) {
-            const props = Object.getOwnPropertyDescriptors(value);
-            for (let prop in props) {
-                const desc = props[prop];
-                if (desc.configurable && typeof desc.value === 'function') {
-                    mapGlobalProxyToFunction.set(descriptor.value, value);
-                    break;
-                }
-            }
-        }
-
-        // Fix `this` for watched native static methods (e.g. `URL.createObjectURL`) in Chrome.
-        // Chrome throws an exception if `this` is a proxy in these cases; other browsers do not.
-        // Only applies when one of our proxies is the current `this` to avoid altering native behavior.
-        if (path && jsTypes.indexOf(path) === -1 && new String(path).indexOf('prototype') === -1) {
-            descriptor.value = new Proxy(descriptor.value, {
-                apply: (target, obj, args) => {
-                    return Reflect.apply(target, mapGlobalProxyToFunction.get(obj) || obj, args);
-                }
-            });
-        }
+        fixStaticThis(proxy, value, key, path);
 
         // Work around missing properties on CSSStyleDeclaration in Chrome
         if (key === 'getComputedStyle') {
