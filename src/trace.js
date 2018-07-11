@@ -201,7 +201,7 @@ export default class Trace {
      */
     apply(obj, key, args, result) {
 
-        if(!ignoring) {
+        if (!ignoring) {
             let prefix = '';
             let postfix = '';
             let type = typeof result;

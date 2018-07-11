@@ -49,6 +49,22 @@ const exclude = new Array(
 );
 
 /**
+ * Collection of custom watch handlers to defer to when setting up watch proxies.
+ * @type {Map<string, ProxyHandler>}
+ */
+const handlers = new Map();
+
+/**
+ * Register a custom watch handler for the specified function.
+ * This allows altering how a given function appears in the trace.
+ * @param {string} key
+ * @param {ProxyHandler} handler 
+ */
+export function handle(key, handler) {
+    handlers.set(key, handler);
+}
+
+/**
  * Track and log actions against the provided object.
  * @param {any} obj The object to track.
  * @param {string} [path=''] The path to display in logs.
@@ -154,7 +170,7 @@ function watchValue(descriptor, key, path) {
     const value = descriptor.value;
     if (value && typeof value === 'function') {
 
-        const proxy = descriptor.value = new Proxy(value, {
+        const proxy = descriptor.value = new Proxy(value, handlers.get(key) || {
             apply: (target, obj, args) => {
                 return new Trace().apply(obj, key, args, Reflect.apply(target, obj, args));
             },
