@@ -11,6 +11,11 @@ of site compatibility issues which occur in some, but not all major browsers.
 
 A collection of interoperability differences found while building this project.
 
+### `history.state`
+
+1. In Edge, `history.state` returns a new instance each call.
+   Chrome and Firefox return the same instance each call (for the same state).
+
 ### `setTimeout`
 
 1. In Firefox, the IDs returned from calling `setTimeout()` begin at `2`.
