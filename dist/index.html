@@ -23,6 +23,9 @@
             document.getElementsByClassName + ''; // `toString` of proxy of a function
             CSS.supports('foo'); // Proxy of static `this` in Chrome (due to incorrect definition as "function")
 
+            const n = 10;
+            n.toLocaleString();
+
             // Ensure unstable events are excluded
             window.addEventListener('mousemove', () => {
                 console.log('mousemove!');

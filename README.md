@@ -16,14 +16,22 @@ A collection of interoperability differences found while building this project.
 1. In Firefox, the IDs returned from calling `setTimeout()` begin at `2`.
    Chrome and Edge begin at `1`.
 
-### Regular Expressions
+### `Number`
+
+1. In Edge, `Number.prototype.toLocaleString()` invokes `Map.prototype.get()`
+   when called. Chrome and Firefox do not.
+
+### `RegExp`
 
 1. In Chrome and Firefox, `RegExp.prototype.test()` invokes
    `RegExp.prototype.exec()` when called. Edge does not.
-2. In Chrome and Firefox, `String.prototype.match()` invokes
+
+### `String`
+
+1. In Chrome and Firefox, `String.prototype.match()` invokes
    `RegExp.prototype.global` and `RegExp.prototype.exec()` when called.
    Edge does not.
-3. In Chrome and Firefox, `String.prototype.replace()` invokes
+2. In Chrome and Firefox, `String.prototype.replace()` invokes
    `RegExp.prototype.global`, `RegExp.prototype.unicode`, and
    `RegExp.prototype.exec()` when called. Edge does not.
 
