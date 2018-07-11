@@ -12,7 +12,7 @@ import WeakMap from './mirror/WeakMap.js';
 import WeakSet from './mirror/WeakSet.js';
 
 // Workaround webpack adding Object() references which break tracking.
-const ignore = _ignore; 
+const ignore = _ignore;
 const fixInstanceStyles = _fixInstanceStyles;
 
 /**
@@ -40,8 +40,10 @@ const mapProxyToFunction = new WeakMap();
  */
 const exclude = new Array(
     'constructor',  // Was somehow wrapped for `Promise`, creating odd logs around `then` calls.
-    'timing',       // Firefox throws errors using `performance.timing` as a `WeakMap` key.
-    'navigation'    // Firefox throws errors using `performance.navigation` as a `WeakMap` key.
+    'frames',       // Already not tracked in Chrome due to being a 'value' property.
+    'navigation',   // Firefox throws errors using `performance.navigation` as a `WeakMap` key.
+    'self',         // Already not tracked in Chrome due to being a 'value' property.
+    'timing'        // Firefox throws errors using `performance.timing` as a `WeakMap` key.
 );
 
 /**
@@ -346,7 +348,7 @@ function getProxyFor(fn) {
 /**
  * Get the function wrapped by the provided proxy.
  * Returns the passed object if it is not a wrapper for a function.
- * @param {Proxy} proxy 
+ * @param {Proxy} proxy
  */
 function getFunctionFor(proxy) {
     return mapProxyToFunction.get(proxy) || proxy;

@@ -7,6 +7,7 @@ const ignore = _ignore;
 /**
  * Make `String.prototype.match` consistent by ignoring sub-calls to `global`
  * and `exec`. Both Chrome and Firefox make these sub-calls. Edge does not.
+ * Note that the sub-calls are still made, just ignored in the trace.
  */
 export default function normalize() {
 

@@ -69,3 +69,9 @@ A collection of interoperability differences found while building this project.
 
 1. In Edge, `document.implementation` returns a new instance each call.
    Chrome and Firefox return the same instance each call.
+
+### `window`
+
+1. In Chrome, `window.frames`, `window.self`, `window.top`, and `window.window`
+   are all exposed as value descriptors. In Edge and Firefox these are exposed
+   as getters/setters.
