@@ -2,6 +2,7 @@ import Array from './mirror/Array.js';
 import JSON from './mirror/JSON.js';
 import String from './mirror/String.js';
 import WeakMap from './mirror/WeakMap.js';
+import WeakSet from './mirror/WeakSet.js';
 
 const traceObjectIDs = false;
 
@@ -16,6 +17,11 @@ const actions = new Array('var o = [];');
  * @type {WeakMap<any, number>}
  */
 const created = new WeakMap();
+
+/**
+ * Collection to remember tracked objects ensuring they are only wrapped once.
+ */
+export const tracked = new WeakSet();
 
 /**
  * Map of global static object names (`JSON`, `Math`, etc.)
@@ -105,7 +111,7 @@ function idObject(obj) {
 }
 
 function idFunction(fn) {
-    return fn.name || 'function() {}';
+    return tracked.has(fn) ? (fn.name || 'function() { [native code] }') : 'function() { }';
 }
 
 /**

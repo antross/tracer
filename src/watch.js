@@ -1,7 +1,7 @@
 import _fixInstanceStyles from './workarounds/fix-instance-styles.js';
 import _fixStaticThis from './workarounds/fix-static-this.js';
 import Trace from './trace.js';
-import { ignore as _ignore } from './trace.js';
+import { ignore as _ignore, tracked } from './trace.js';
 
 // Import mirrored types to avoid self-tracing.
 import Array from './mirror/Array.js';
@@ -10,17 +10,11 @@ import Proxy from './mirror/Proxy.js';
 import Reflect from './mirror/Reflect.js';
 import String from './mirror/String.js';
 import WeakMap from './mirror/WeakMap.js';
-import WeakSet from './mirror/WeakSet.js';
 
 // Workaround webpack adding Object() references which break tracking.
 const ignore = _ignore;
 const fixInstanceStyles = _fixInstanceStyles;
 const fixStaticThis = _fixStaticThis;
-
-/**
- * Collection to remember tracked objects ensuring they are only wrapped once.
- */
-const tracked = new WeakSet();
 
 /**
  * Tracks event listeners to establish trace context.
