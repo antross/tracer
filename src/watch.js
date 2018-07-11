@@ -1,4 +1,5 @@
 import _fixInstanceStyles from './workarounds/fix-instance-styles.js';
+import _fixStaticThis from './workarounds/fix-static-this.js';
 import Trace from './trace.js';
 import { ignore as _ignore } from './trace.js';
 
@@ -14,6 +15,7 @@ import WeakSet from './mirror/WeakSet.js';
 // Workaround webpack adding Object() references which break tracking.
 const ignore = _ignore;
 const fixInstanceStyles = _fixInstanceStyles;
+const fixStaticThis = _fixStaticThis;
 
 /**
  * Collection to remember tracked objects ensuring they are only wrapped once.
@@ -47,51 +49,6 @@ const exclude = new Array(
 );
 
 /**
- * List of built-in functions with static methods that work with any `this` value.
- * Used to exclude these objects from `fixStaticThis()`.
- */
-const jsTypes = new Array(
-    'Array',
-    'Date',
-    'Error',
-    'Number',
-    'Object',
-    'Promise',
-    'Proxy',
-    'String',
-    'Symbol',
-    'RegExp'
-);
-
-/**
- * Fix `this` for watched native static methods (e.g. `URL.createObjectURL`) in Chrome.
- * Chrome throws an exception if `this` is a proxy in these cases; other browsers do not.
- * Only applies when one of our proxies is the current `this` to avoid altering native behavior.
- */
-function fixStaticThis(proxy, native, key, path) {
-    if (jsTypes.indexOf(key) !== -1 || new String(path).indexOf('prototype') !== -1)
-        return; // Only fix global functions with static methods.
-
-    const descriptors = Object.getOwnPropertyDescriptors(native);
-
-    for (let prop in descriptors) {
-        const descriptor = descriptors[prop];
-
-        if (descriptor.configurable && typeof descriptor.value === 'function') {
-
-            // Re-wire `this` when a static method is invoked to point to the native object.
-            descriptor.value = new Proxy(descriptor.value, {
-                apply: (target, obj, args) => {
-                    return Reflect.apply(target, obj === proxy ? native : obj, args);
-                }
-            });
-
-            Object.defineProperty(native, prop, descriptor);
-        }
-    }
-}
-
-/**
  * Track and log actions against the provided object.
  * @param {any} obj The object to track.
  * @param {string} [path=''] The path to display in logs.
@@ -118,7 +75,7 @@ export default function watch(obj, path) {
         if (descriptor.configurable) {
             watchGetter(descriptor, key);
             watchSetter(descriptor, key);
-            watchFunction(descriptor, key, path);
+            watchValue(descriptor, key, path);
 
             Object.defineProperty(obj, key, descriptor);
         }
@@ -192,7 +149,7 @@ function watchSetter(descriptor, key) {
  * @param {string} key The name of the property.
  * @param {string} path The global path to the object this function lives on (e.g. `Node.prototype`).
  */
-function watchFunction(descriptor, key, path) {
+function watchValue(descriptor, key, path) {
 
     const value = descriptor.value;
     if (value && typeof value === 'function') {
