@@ -8,18 +8,20 @@ const Date_toString = Date.prototype.toString;
 /**
  * A fixed starting date seed to keep values consisted across runs.
  */
-let d = 1528327767458;
+let d = new NativeDate(2018, 6, 17, 11, 32).getTime();
 
 /**
- * Stabilize steps from the starting date by 100ms increments each call.
+ * Always return the same stable date.
+ * An earlier approach stepped in 100ms increments, but produced a fair amount
+ * of noise if an additional call was made early on in one of the traces.
  * @return {number} The next stabilized step.
  */
 export function now() {
-    return d += 100;
+    return d;
 }
 
 /**
- * Override `Date` APIs to step by 100ms between calls.
+ * Override `Date` APIs to use our defined step.
  */
 export default function stabilize() {
 
