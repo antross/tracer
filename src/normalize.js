@@ -1,6 +1,7 @@
 import normalizeFunction from './normalize/Function.js';
 import normalizeNavigator from './normalize/Navigator.js';
 import normalizeNumber from './normalize/Number.js';
+import normalizePromise from './normalize/Promise.js';
 import normalizeRegExp from './normalize/RegExp.js';
 import normalizeSetInterval from './normalize/setInterval.js';
 import normalizeSetTimeout from './normalize/setTimeout.js';
@@ -16,6 +17,7 @@ export default function normalize() {
     normalizeFunction();
     normalizeNavigator();
     normalizeNumber();
+    normalizePromise();
     normalizeRegExp();
     normalizeSetInterval();
     normalizeSetTimeout();
