@@ -30,17 +30,26 @@ const mapFunctionToProxy = new WeakMap();
 const mapProxyToFunction = new WeakMap();
 
 /**
- * List of properties to ignore while tracing, typically due to side-effects.
- * This list should be as small as possible to reduce blind spots during tracing.
- * @type {string[]}
+ * Properties to ignore while tracing, typically due to side-effects.
+ * This should be as small as possible to reduce blind spots during tracing.
  */
-const exclude = new Array(
-    'constructor',  // Was somehow wrapped for `Promise`, creating odd logs around `then` calls.
-    'frames',       // Already not tracked in Chrome due to being a 'value' property.
-    'navigation',   // Firefox throws errors using `performance.navigation` as a `WeakMap` key.
-    'self',         // Already not tracked in Chrome due to being a 'value' property.
-    'timing'        // Firefox throws errors using `performance.timing` as a `WeakMap` key.
-);
+const exclude = {
+
+    // Is somehow different from `Promise`, creating odd logs around `then` calls.
+    constructor: window.Promise.prototype,
+
+    // Already not tracked in Chrome due to being a 'value' property.
+    frames: window,
+
+    // Firefox throws errors using `performance.navigation` as a `WeakMap` key.
+    navigation: window.Performance.prototype,
+
+    // Already not tracked in Chrome due to being a 'value' property.
+    self: window,
+
+    // Firefox throws errors using `performance.timing` as a `WeakMap` key.
+    timing: window.Performance.prototype
+};
 
 /**
  * Collection of custom watch handlers to defer to when setting up watch proxies.
@@ -76,7 +85,7 @@ export default function watch(obj, path) {
     const descriptors = Object.getOwnPropertyDescriptors(obj);
     const keys = new Array()
         .concat(Object.keys(descriptors))
-        .filter(k => k[0] !== '$' && exclude.indexOf(k) === -1);
+        .filter(k => k[0] !== '$' && exclude[k] !== obj);
 
     keys.forEach(key => {
         const descriptor = descriptors[key];
