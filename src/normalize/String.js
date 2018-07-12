@@ -1,4 +1,5 @@
 import Proxy from '../mirror/Proxy.js';
+import Reflect from '../mirror/Reflect.js';
 import { ignore as _ignore } from '../trace.js';
 
 // Workaround webpack adding Object() references which break tracking.
