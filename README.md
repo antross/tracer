@@ -30,6 +30,11 @@ A collection of interoperability differences found while building this project.
 
 1. In Edge, `Number.prototype.toLocaleString()` invokes `Map.prototype.get()`
    when called. Chrome and Firefox do not.
+2. Subtle floating-point differences exist between browsers.
+   For example, a JavaScript UUID approach using `(0.01).toString(36)` returns
+   * `"0.0cyk5rcyk5ra"` in Chrome
+   * `"0.0cyk5rcyk5r9k"` in Edge
+   * `"0.0cyk5rcyk5re"` in Firefox
 
 ### `RegExp`
 
