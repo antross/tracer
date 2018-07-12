@@ -21,7 +21,11 @@ window.addEventListener('load', () => {
             const log = save();
             ignore(() => {
                 if (document.title === 'Trace Test') {
-                    document.querySelector('pre').textContent = log;
+                    document.querySelector('pre').textContent = log
+                        .split('\n')
+                        .map((line, index) => `${(index + '').padStart(3)}: ${line}`)
+                        .join('\n');
+
                 } else {
                     const file = new Blob([log], { type: 'text/plain' });
                     const url = _createObjectURL(file);
