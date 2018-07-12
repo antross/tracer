@@ -13,7 +13,7 @@ const _setTimeout = setTimeout;
 normalize();
 stabilize();
 
-console.log('API Tracer: Tracing script loaded. Watching API calls...');
+console.log('tracer: Tracing script loaded. Watching API calls...');
 
 window.addEventListener('load', () => {
     ignore(() => {

@@ -1,7 +1,7 @@
 {
     "author": "Tony Ross",
     "manifest_version": 2,
-    "name": "API Tracer",
+    "name": "tracer",
     "version": "0.1",
     "description": "Traces native API calls from a page",
     "content_scripts": [

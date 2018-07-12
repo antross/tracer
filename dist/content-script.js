@@ -1,5 +1,5 @@
 // This runs at `document_start` before any scripts in the page.
-console.log('API Tracer: Content script loaded. Injecting tracing script...');
+console.log('tracer: Content script loaded. Injecting tracing script...');
 
 // Normalize access to extension APIs across browsers.
 const browser = this.browser || this.chrome;
