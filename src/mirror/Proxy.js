@@ -40,6 +40,12 @@ function fixProxyToString() {
             // Track proxies created for functions
             if (typeof args[0] === 'function') {
                 proxies.set(result, args[0]);
+
+                // Also update `prototype.constructor` for completeness
+                // Excludes `Promise` for now due to extra logs in Chrome...
+                if (args[0].prototype && args[0].prototype.constructor === args[0] && args[0] !== Promise) {
+                    args[0].prototype.constructor = result;
+                }
             }
 
             return result;

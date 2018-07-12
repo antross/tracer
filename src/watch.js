@@ -35,9 +35,6 @@ const mapProxyToFunction = new WeakMap();
  */
 const excludeProps = {
 
-    // Is somehow different from `Promise`, creating odd logs around `then` calls.
-    constructor: window.Promise.prototype,
-
     // Already not tracked in Chrome due to being a 'value' property.
     frames: window,
 
@@ -103,7 +100,9 @@ export default function watch(obj, path) {
     const descriptors = Object.getOwnPropertyDescriptors(obj);
     const keys = new Array()
         .concat(Object.keys(descriptors))
-        .filter(k => k[0] !== '$' && excludeProps[k] !== obj);
+        .filter(k => k[0] !== '$') // Ignore items injected by dev tools.
+        .filter(k => k !== 'constructor') // Ignore `constructor` (handled by 'mirror/Proxy.js').
+        .filter(k => excludeProps[k] !== obj); // Ignore explicitly excluded properties.
 
     keys.forEach(key => {
         const descriptor = descriptors[key];
