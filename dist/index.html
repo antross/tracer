@@ -22,9 +22,8 @@
             fontSize.replace(/(\d+)px/, '$1'); // Chrome and Firefox implement `replace` by calling `global`, `unicode`, and `exec`
             document.getElementsByClassName + ''; // `toString` of proxy of a function
             CSS.supports('foo'); // Proxy of static `this` in Chrome (due to incorrect definition as "function")
-
-            const n = 10;
-            n.toLocaleString();
+            (10).toLocaleString(); // Edge implements by calling `Map.prototype.get` (which ends up in the trace)
+            location.href; // Chrome and Firefox do not allow this to be overridden, but Edge does
 
             // Ensure unstable events are excluded
             window.addEventListener('mousemove', () => {

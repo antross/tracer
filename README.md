@@ -11,6 +11,11 @@ of site compatibility issues which occur in some, but not all major browsers.
 
 A collection of interoperability differences found while building this project.
 
+### `document.location`
+
+1. In Edge, `document.location` and most properties on it are configurable.
+   In Chrome and Firefox they are not.
+
 ### `history.state`
 
 1. In Edge, `history.state` returns a new instance each call.

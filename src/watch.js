@@ -33,13 +33,16 @@ const mapProxyToFunction = new WeakMap();
  * Properties to ignore while tracing, typically due to side-effects.
  * This should be as small as possible to reduce blind spots during tracing.
  */
-const exclude = {
+const excludeProps = {
 
     // Is somehow different from `Promise`, creating odd logs around `then` calls.
     constructor: window.Promise.prototype,
 
     // Already not tracked in Chrome due to being a 'value' property.
     frames: window,
+
+    // Edge allows this to be overridden, but Chrome and Firefox don't
+    location: Document.prototype,
 
     // Firefox throws errors using `performance.navigation` as a `WeakMap` key.
     navigation: window.Performance.prototype,
@@ -50,6 +53,18 @@ const exclude = {
     // Firefox throws errors using `performance.timing` as a `WeakMap` key.
     timing: window.Performance.prototype
 };
+
+/**
+ * Objects to fully ignore while tracing.
+ * This should be as small as possible to reduce blind spots during tracing.
+ */
+const excludeObjects = new Set([
+
+    // Edge allows most string getters to be overriden, but Chrome and Firefox don't
+    // Affects `location.href`, `location.host`, etc.
+    Location.prototype
+
+]);
 
 /**
  * Collection of custom watch handlers to defer to when setting up watch proxies.
@@ -76,6 +91,9 @@ export default function watch(obj, path) {
     if (!obj || tracked.has(obj))
         return; // Ignore empty values and objects which have already been tracked.
 
+    if (excludeObjects.has(obj))
+        return; // Ignore objects we've explicitly decided to exclude.
+
     path = path || '';
 
     // Mark this object as tracked.
@@ -85,7 +103,7 @@ export default function watch(obj, path) {
     const descriptors = Object.getOwnPropertyDescriptors(obj);
     const keys = new Array()
         .concat(Object.keys(descriptors))
-        .filter(k => k[0] !== '$' && exclude[k] !== obj);
+        .filter(k => k[0] !== '$' && excludeProps[k] !== obj);
 
     keys.forEach(key => {
         const descriptor = descriptors[key];
