@@ -1,5 +1,6 @@
 import normalize from './normalize.js';
 import stabilize from './stabilize.js';
+import suppress from './suppress.js';
 import { ignore as _ignore, save as _save } from './trace.js';
 import watch from './watch.js';
 
@@ -12,6 +13,7 @@ const _setTimeout = setTimeout;
 
 normalize();
 stabilize();
+suppress();
 
 console.log('tracer: Tracing script loaded. Watching API calls...');
 

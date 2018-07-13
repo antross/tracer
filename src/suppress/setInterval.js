@@ -3,13 +3,13 @@ import Trace from '../trace.js';
 import { handle } from '../watch.js';
 
 /**
- * Map traces for `setTimeout` to omit the returned timer ID.
+ * Map traces for `setInterval` to omit the returned timer ID.
  * This normalizes Firefox traces since it starts at `2` instead of `1`.
- * It also reduces noise due to extra `setTimeout` calls between traces.
+ * It also reduces noise due to extra `setInterval` calls between traces.
  */
-export default function watch() {
+export default function suppress() {
 
-    const key = 'setTimeout';
+    const key = 'setInterval';
 
     handle(key, {
         apply: (target, obj, args) => {

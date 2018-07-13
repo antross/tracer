@@ -1,5 +1,7 @@
 import Array from './mirror/Array.js';
 import JSON from './mirror/JSON.js';
+import Proxy from './mirror/Proxy.js';
+import Reflect from './mirror/Reflect.js';
 import String from './mirror/String.js';
 import WeakMap from './mirror/WeakMap.js';
 import WeakSet from './mirror/WeakSet.js';
@@ -127,6 +129,24 @@ export function ignore(fn) {
     } else {
         fn();
     }
+}
+
+/**
+ * Automatically ignore calls made within a method on an object.
+ * @param {any} obj The target object.
+ * @param {string} name The name of the method.
+ */
+export function ignoreSubCalls(obj, name) {
+    if (!obj[name])
+        return;
+
+    obj[name] = new Proxy(obj[name], {
+        apply: (target, obj, args) => {
+            let result;
+            ignore(() => result = Reflect.apply(target, obj, args));
+            return result;
+        }
+    });
 }
 
 /**
