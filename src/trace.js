@@ -61,8 +61,7 @@ let indent = '';
  * @param {any[]} args The parameters to serialize.
  */
 function serializeArgs(args) {
-    return new Array()
-        .concat(args)
+    return Array.from(args)
         .map(a => id(a))
         .join(', ');
 }

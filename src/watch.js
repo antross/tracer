@@ -98,8 +98,7 @@ export default function watch(obj, path) {
 
     const prefix = path ? `${path}.` : '';
     const descriptors = Object.getOwnPropertyDescriptors(obj);
-    const keys = new Array()
-        .concat(Object.keys(descriptors))
+    const keys = Array.from(Object.keys(descriptors))
         .filter(k => k[0] !== '$') // Ignore items injected by dev tools.
         .filter(k => k !== 'constructor') // Ignore `constructor` (handled by 'mirror/Proxy.js').
         .filter(k => excludeProps[k] !== obj); // Ignore explicitly excluded properties.
