@@ -190,7 +190,9 @@ export function ignoreSubCalls(obj, name, exceptArgs) {
 function revealSubCalls(fn) {
     return new Proxy(fn, {
         apply: (target, obj, args) => {
-            reveal(() => Reflect.apply(target, obj, args));
+            let result;
+            reveal(() => result = Reflect.apply(target, obj, args));
+            return result;
         }
     });
 }
