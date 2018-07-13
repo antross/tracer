@@ -1,3 +1,4 @@
+import suppressArray from './suppress/Array.js';
 import suppressNumber from './suppress/Number.js';
 import suppressPromise from './suppress/Promise.js';
 import suppressRegExp from './suppress/RegExp.js';
@@ -15,6 +16,7 @@ import suppressString from './suppress/String.js';
  * as in `Array.prototype.forEach()`.
  */
 export default function suppress() {
+    suppressArray();
     suppressNumber();
     suppressPromise();
     suppressRegExp();

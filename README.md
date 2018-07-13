@@ -26,6 +26,12 @@ A collection of interoperability differences found while building this project.
 1. In Firefox, the IDs returned from calling `setTimeout()` begin at `2`.
    Chrome and Edge begin at `1`.
 
+### `Array`
+
+1. In Chrome and Firefox, operations on `Array.prototype` which produce a new
+   `Array` (e.g. `Array.prototype.slice()` invoke `new Array()` when called.
+   Edge does not.
+
 ### `Number`
 
 1. In Edge, `Number.prototype.toLocaleString()` invokes `Map.prototype.get()`

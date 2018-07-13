@@ -132,6 +132,39 @@ export function ignore(fn) {
 }
 
 /**
+ * Help suppress sub-calls after `Array.prototype.filter` and `Array.prototype.map`.
+ */
+export function ignoreAfter(obj, name) {
+    if (!obj[name])
+        return;
+
+    obj[name] = new Proxy(obj[name], {
+        apply: (target, obj, args) => {
+            if (!ignoring && args[0] instanceof Function) {
+                ignoring = true;
+                args[0] = beforeFirstCall(args[0], () => ignoring = false);
+            }
+            return Reflect.apply(target, obj, args);
+        }
+    });
+}
+
+/**
+ * Run `callback` just before the first invocation of `fn`.
+ */
+function beforeFirstCall(fn, callback) {
+    return new Proxy(fn, {
+        apply: (target, obj, args) => {
+            if (callback) {
+                callback();
+                callback = null;
+            }
+            return Reflect.apply(target, obj, args);
+        }
+    });
+}
+
+/**
  * Automatically ignore calls made within a method on an object.
  * @param {any} obj The target object.
  * @param {string} name The name of the method.
