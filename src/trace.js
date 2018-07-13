@@ -121,16 +121,18 @@ function idFunction(fn) {
  * @param {Function} fn The function to run.
  */
 export function ignore(fn) {
+    let result;
     if (!ignoring) {
         try {
             ignoring = true;
-            fn();
+            result = fn();
         } finally {
             ignoring = false;
         }
     } else {
-        fn();
+        result = fn();
     }
+    return result;
 }
 
 /**
@@ -140,16 +142,18 @@ export function ignore(fn) {
  * @param {Function} fn The function to run.
  */
 function reveal(fn) {
+    let result;
     if (ignoring) {
         try {
             ignoring = false;
-            fn();
+            result = fn();
         } finally {
             ignoring = true;
         }
     } else {
-        fn();
+        result = fn();
     }
+    return result;
 }
 
 /**
@@ -165,7 +169,6 @@ export function ignoreSubCalls(obj, name, exceptArgs) {
     // Wrap the property in a proxy to automatically ignore sub-execution when invoked.
     obj[name] = new Proxy(obj[name], {
         apply: (target, obj, args) => {
-            let result;
 
             // When invoked, check if any args contain callbacks to be revealed.
             // And wrap them in a revealing proxy if needed.
@@ -176,9 +179,7 @@ export function ignoreSubCalls(obj, name, exceptArgs) {
             }
 
             // Then ignore the actual sub-call.
-            ignore(() => result = Reflect.apply(target, obj, args));
-
-            return result;
+            return ignore(() => Reflect.apply(target, obj, args));
         }
     });
 }
@@ -190,9 +191,7 @@ export function ignoreSubCalls(obj, name, exceptArgs) {
 function revealSubCalls(fn) {
     return new Proxy(fn, {
         apply: (target, obj, args) => {
-            let result;
-            reveal(() => result = Reflect.apply(target, obj, args));
-            return result;
+            return reveal(() => Reflect.apply(target, obj, args));
         }
     });
 }

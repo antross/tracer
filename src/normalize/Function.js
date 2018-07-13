@@ -16,9 +16,7 @@ export default function normalize() {
 
     Function.prototype.toString = new Proxy(Function.prototype.toString, {
         apply:(target, obj, args) => {
-            let result = Reflect.apply(target, obj, args);
-            ignore(() => result = result.replace(/\s+(\[native code\])\s+/, " $1 "));
-            return result;
+            return ignore(() => Reflect.apply(target, obj, args).replace(/\s+(\[native code\])\s+/, " $1 "));
         }
     });
 }
