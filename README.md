@@ -21,6 +21,12 @@ A collection of interoperability differences found while building this project.
 1. In Edge, `history.state` returns a new instance each call.
    Chrome and Firefox return the same instance each call (for the same state).
 
+### `navigator.serviceWorker`
+
+1. When private browsing in Chrome, `navigator.serviceWorker` exists and works.
+   In Edge and Firefox, this is `undefined`, and `'serviceWorker' in navigator`
+   returns `false`. All browsers support this when browsing normally.
+
 ### `setTimeout`
 
 1. In Firefox, the IDs returned from calling `setTimeout()` begin at `2`.
