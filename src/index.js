@@ -11,6 +11,9 @@ const save = _save;
 const _createObjectURL = URL.createObjectURL;
 const _setTimeout = setTimeout;
 
+// Save the user agent before shimming to get the "real" browser.
+const ua = navigator.userAgent;
+
 normalize();
 stabilize();
 suppress();
@@ -33,7 +36,6 @@ window.addEventListener('load', () => {
                     const url = _createObjectURL(file);
                     const a = document.createElement('a');
 
-                    const ua = navigator.userAgent;
                     const browser = /\bEdge\b/.test(ua) ? 'edge' : 
                         /\bFirefox\b/.test(ua) ? 'firefox' :
                         /\bChrome\b/.test(ua) ? 'chrome' :
