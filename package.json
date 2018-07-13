@@ -1,6 +1,6 @@
 {
-  "name": "shim",
-  "version": "1.0.0",
+  "name": "tracer",
+  "version": "0.1.0",
   "description": "",
   "private": true,
   "scripts": {
@@ -9,7 +9,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "",
   "devDependencies": {
     "webpack": "^4.14.0",
     "webpack-cli": "^3.0.8"
