@@ -4,6 +4,13 @@
     "name": "tracer",
     "version": "0.1",
     "description": "Traces native API calls from a page",
+    "background": {
+        "scripts": ["background-script.js"],
+        "persistent": false
+    },
+    "browser_action": {
+        "default_title": "Trace page execution"
+    },
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
