@@ -35,6 +35,11 @@ const mapProxyToFunction = new WeakMap();
  */
 const excludeProps = {
 
+    // Generates "duplicate" logs if used against native APIs we already track.
+    // Also not too interested in invocations against page-level functions anyway.
+    apply: Function.prototype,
+    call: Function.prototype,
+
     // Already not tracked in Chrome due to being a 'value' property.
     frames: window,
 
@@ -73,7 +78,7 @@ const handlers = new Map();
  * Register a custom watch handler for the specified function.
  * This allows altering how a given function appears in the trace.
  * @param {string} key
- * @param {ProxyHandler} handler 
+ * @param {ProxyHandler} handler
  */
 export function handle(key, handler) {
     handlers.set(key, handler);
