@@ -123,9 +123,12 @@ function idFunction(fn) {
  */
 export function ignore(fn) {
     if (!ignoring) {
-        ignoring = true;
-        fn();
-        ignoring = false;
+        try {
+            ignoring = true;
+            fn();
+        } finally {
+            ignoring = false;
+        }
     } else {
         fn();
     }
