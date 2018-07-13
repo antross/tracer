@@ -43,7 +43,7 @@ window.addEventListener('load', () => {
                         'unknown';
 
                     a.href = url;
-                    a.download = `${browser}-trace.txt`;
+                    a.download = `${location.hostname}_${browser}.trace.txt`;
                     document.body.appendChild(a);
                     a.click();
 
