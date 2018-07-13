@@ -119,7 +119,7 @@ function idFunction(fn) {
 /**
  * Run a function ignoring any contained trace calls.
  * Used to ignore blocks of page execution (e.g. inside a `mousemove` listener).
- * @param {function} fn The function to run.
+ * @param {Function} fn The function to run.
  */
 export function ignore(fn) {
     if (!ignoring) {
@@ -135,52 +135,63 @@ export function ignore(fn) {
 }
 
 /**
- * Help suppress sub-calls after `Array.prototype.filter` and `Array.prototype.map`.
+ * Run a function logging any contained trace calls even if currently ignoring.
+ * Used to break out of blocks of ignored page execution (e.g. inside an
+ * `Array.prototype.filter` callback function).
+ * @param {Function} fn The function to run.
  */
-export function ignoreAfter(obj, name) {
-    if (!obj[name])
-        return;
-
-    obj[name] = new Proxy(obj[name], {
-        apply: (target, obj, args) => {
-            if (!ignoring && args[0] instanceof Function) {
-                ignoring = true;
-                args[0] = beforeFirstCall(args[0], () => ignoring = false);
-            }
-            return Reflect.apply(target, obj, args);
+function reveal(fn) {
+    if (ignoring) {
+        try {
+            ignoring = false;
+            fn();
+        } finally {
+            ignoring = true;
         }
-    });
-}
-
-/**
- * Run `callback` just before the first invocation of `fn`.
- */
-function beforeFirstCall(fn, callback) {
-    return new Proxy(fn, {
-        apply: (target, obj, args) => {
-            if (callback) {
-                callback();
-                callback = null;
-            }
-            return Reflect.apply(target, obj, args);
-        }
-    });
+    } else {
+        fn();
+    }
 }
 
 /**
  * Automatically ignore calls made within a method on an object.
  * @param {any} obj The target object.
  * @param {string} name The name of the method.
+ * @param {number[]} exceptArgs Indices of callback functions to be revealed (e.g. `[0]` for `Array.prototype.filter`).
  */
-export function ignoreSubCalls(obj, name) {
+export function ignoreSubCalls(obj, name, exceptArgs) {
     if (!obj[name])
         return;
 
+    // Wrap the property in a proxy to automatically ignore sub-execution when invoked.
     obj[name] = new Proxy(obj[name], {
         apply: (target, obj, args) => {
             let result;
+
+            // When invoked, check if any args contain callbacks to be revealed.
+            // And wrap them in a revealing proxy if needed.
+            if (!ignoring && exceptArgs) {
+                Array.from(exceptArgs).forEach(index => {
+                    args[index] = revealSubCalls(args[index]);
+                });
+            }
+
+            // Then ignore the actual sub-call.
             ignore(() => result = Reflect.apply(target, obj, args));
+
             return result;
+        }
+    });
+}
+
+/**
+ * Automatically include sub-calls of the provided function in the trace.
+ * @param {Function} fn The function whose sub-calls to reveal.
+ */
+function revealSubCalls(fn) {
+    return new Proxy(fn, {
+        apply: (target, obj, args) => {
+            reveal(() => Reflect.apply(target, obj, args));
         }
     });
 }

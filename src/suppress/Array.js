@@ -1,7 +1,6 @@
-import { ignoreAfter as _ignoreAfter, ignoreSubCalls as _ignoreSubCalls } from '../trace.js';
+import { ignoreSubCalls as _ignoreSubCalls } from '../trace.js';
 
 // Workaround webpack adding Object() references which break tracking.
-const ignoreAfter = _ignoreAfter;
 const ignoreSubCalls = _ignoreSubCalls;
 
 /**
@@ -18,7 +17,7 @@ export default function suppress() {
     ignoreSubCalls(Array.prototype, 'slice');
     ignoreSubCalls(Array.prototype, 'splice');
 
-    ignoreAfter(Array.prototype, 'filter');
-    ignoreAfter(Array.prototype, 'map');
+    ignoreSubCalls(Array.prototype, 'filter', [0]);
+    ignoreSubCalls(Array.prototype, 'map', [0]);
 
 }
