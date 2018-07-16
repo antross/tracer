@@ -1,9 +1,12 @@
 // Normalize access to extension APIs across browsers.
 const browser = this.browser || this.chrome;
 
-const enabledKey = '--tracing--';
+const tracerKey = '--tracer--';
 
-if (sessionStorage.getItem(enabledKey)) {
+let injected = false;
+
+// TODO: control injection from background-script.js
+if (sessionStorage.getItem(tracerKey)) {
 
     // This runs at `document_start` before any scripts in the page.
     console.log('tracer: Content script loaded. Injecting tracing script...');
@@ -18,13 +21,24 @@ if (sessionStorage.getItem(enabledKey)) {
     s.textContent = xhr.responseText;
     (document.head || document.documentElement).appendChild(s);
     s.remove();
+
+    injected = true;
 }
 
 browser.runtime.onMessage.addListener(message => {
     if (message.enabled) {
-        sessionStorage.setItem(enabledKey, true);
+        sessionStorage.setItem(tracerKey, true);
+        if (!injected) {
+            location.reload();
+        }
     } else {
-        sessionStorage.removeItem(enabledKey);
+        sessionStorage.removeItem(tracerKey);
     }
-    location.reload();
+    sendMessage(message);
 });
+
+function sendMessage(data) {
+    const evt = document.createEvent('CustomEvent');
+    evt.initCustomEvent("--tracer--", false, false, data);
+    document.dispatchEvent(evt);
+}

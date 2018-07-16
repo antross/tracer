@@ -6,13 +6,14 @@ import String from './mirror/String.js';
 import WeakMap from './mirror/WeakMap.js';
 import WeakSet from './mirror/WeakSet.js';
 
+const tab = new String('\t');
 const traceObjectIDs = false;
 
 /**
  * Log of actions performed during the trace.
  * @type {string[]}
  */
-const actions = new Array('var o = [];');
+let actions = new Array(); // traceObjectIds ? new Array('var o = [];') : new Array();
 
 /**
  * Tracks seen objects to assign consistent IDs in the trace.
@@ -42,7 +43,12 @@ const staticGlobals = new WeakMap([
 ]);
 
 /**
- * Flag to (temporarily) disable tracing.
+ * Flag to track whether tracing has been enabled by the user.
+ */
+let tracing = true;
+
+/**
+ * Flag to (temporarily) disable tracing for a sequence of calls.
  */
 let ignoring = false;
 
@@ -197,11 +203,21 @@ function revealSubCalls(fn) {
 }
 
 /**
- * Serialize the log of actions.
- * @returns {string} A string with each logged action on its own line.
+ * Save the log of actions, clearing the list in the process.
+ * @returns {string[]} A list of logged actions.
  */
 export function save() {
-    return actions.join('\n');
+    const result = actions;
+    actions = new Array();
+    return result;
+}
+
+/**
+ * Enable/disable tracing.
+ * @param {boolean} value 
+ */
+export function setTracing(value) {
+    tracing = value;
 }
 
 /**
@@ -210,7 +226,11 @@ export function save() {
 export default class Trace {
 
     constructor() {
-        this.index = ignoring ? 0 : actions.push('') - 1;
+        this.index = this.isActive() ? actions.push('') - 1 : 0;
+    }
+
+    isActive() {
+        return !ignoring && tracing;
     }
 
     /**
@@ -221,7 +241,7 @@ export default class Trace {
      */
     get(obj, key, result) {
 
-        if (!ignoring) {
+        if (this.isActive()) {
             let prefix = '', suffix = '';
             const type = typeof result;
 
@@ -259,7 +279,7 @@ export default class Trace {
      * @param {any} result The returned value.
      */
     set(obj, key, value, result) {
-        if (!ignoring) {
+        if (this.isActive()) {
             actions[this.index] = `${indent}${id(obj)}.${key} = ${id(value)};`;
         }
         return result;
@@ -274,7 +294,7 @@ export default class Trace {
      */
     apply(obj, key, args, result) {
 
-        if (!ignoring) {
+        if (this.isActive()) {
             let prefix = '';
             let postfix = '';
             let type = typeof result;
@@ -300,7 +320,7 @@ export default class Trace {
      */
     construct(key, args, result) {
 
-        if (!ignoring) {
+        if (this.isActive()) {
             created.set(result, nextId);
             actions[this.index] = `${indent}${id(result)} = new ${key}(${serializeArgs(args)});`;
             nextId++;
@@ -314,9 +334,10 @@ export default class Trace {
      * @param {string} name The name to display for the context.
      */
     begin(name) {
-        if (!ignoring) {
-            actions[this.index] = `\n${indent}// ${name}\n${indent}{`;
-            indent += '\t';
+        if (this.isActive()) {
+            actions.push(`${indent}// ${name}`);
+            actions.push(`${indent}{`);
+            indent += tab;
         }
     }
 
@@ -324,8 +345,8 @@ export default class Trace {
      * Close the current wrapping context and remove the indent.
      */
     end() {
-        if (!ignoring) {
-            indent = new String(indent).substr(1);
+        if (this.isActive()) {
+            indent = new String(indent).substr(tab.length);
             actions[this.index] = `${indent}}`;
         }
     }
