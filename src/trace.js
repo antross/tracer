@@ -91,7 +91,7 @@ function id(obj) {
             return idObject(obj);
 
         default:
-            return JSON.stringify(obj);
+            return new String(JSON.stringify(obj)).substr(0, 128);
     }
 }
 
