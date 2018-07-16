@@ -34,7 +34,7 @@ browser.runtime.onMessage.addListener(message => {
     } else {
         sessionStorage.removeItem(tracerKey);
     }
-    sendMessage(message);
+    sendMessage(JSON.stringify({ enabled: message.enabled }));
 });
 
 function sendMessage(data) {

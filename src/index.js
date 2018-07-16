@@ -25,7 +25,7 @@ console.log('tracer: Tracing script loaded. Watching API calls...');
 
 document.addEventListener(tracerKey, evt => {
     ignore(() => {
-        const enabled = evt.detail.enabled;
+        const enabled = JSON.parse(evt.detail).enabled;
         if (!enabled) {
             saveTraceToFile();
             setTracing(false);
