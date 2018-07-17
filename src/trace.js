@@ -8,12 +8,15 @@ import WeakSet from './mirror/WeakSet.js';
 
 const tab = new String('\t');
 const traceObjectIDs = false;
+const maxTraceCount = 100000;
+
+let droppedCount = 0;
 
 /**
  * Log of actions performed during the trace.
- * @type {string[]}
+ * @type {Trace[]}
  */
-let actions = new Array(); // traceObjectIds ? new Array('var o = [];') : new Array();
+let actions = new Array();
 
 /**
  * Tracks seen objects to assign consistent IDs in the trace.
@@ -61,6 +64,10 @@ let nextId = 1;
  * The current indent level for new action logs (based on context).
  */
 let indent = '';
+
+function isActive() {
+    return !ignoring && tracing;
+}
 
 /**
  * Helper to serialize function parameters to a string.
@@ -207,8 +214,15 @@ function revealSubCalls(fn) {
  * @returns {string[]} A list of logged actions.
  */
 export function save() {
-    const result = actions;
+    const result = actions.map(trace => trace.value);
+
+    if (droppedCount > 0) {
+        result.unshift(`// + ${droppedCount} dropped lines`);
+    }
+
     actions = new Array();
+    droppedCount = 0;
+
     return result;
 }
 
@@ -226,11 +240,16 @@ export function setTracing(value) {
 export default class Trace {
 
     constructor() {
-        this.index = this.isActive() ? actions.push('') - 1 : 0;
-    }
+        this.value = '';
+        if (isActive()) {
+            actions.push(this);
 
-    isActive() {
-        return !ignoring && tracing;
+            // Remove items from the front of the list if we're over the limit.
+            while(actions.length > maxTraceCount) {
+                actions.shift();
+                droppedCount++;
+            }
+        }
     }
 
     /**
@@ -241,7 +260,7 @@ export default class Trace {
      */
     get(obj, key, result) {
 
-        if (this.isActive()) {
+        if (isActive()) {
             let prefix = '', suffix = '';
             const type = typeof result;
 
@@ -265,7 +284,7 @@ export default class Trace {
 
             }
 
-            actions[this.index] = `${indent}${prefix}${id(obj)}.${key}${suffix};`;
+            this.value = `${indent}${prefix}${id(obj)}.${key}${suffix};`;
         }
 
         return result;
@@ -279,8 +298,8 @@ export default class Trace {
      * @param {any} result The returned value.
      */
     set(obj, key, value, result) {
-        if (this.isActive()) {
-            actions[this.index] = `${indent}${id(obj)}.${key} = ${id(value)};`;
+        if (isActive()) {
+            this.value = `${indent}${id(obj)}.${key} = ${id(value)};`;
         }
         return result;
     };
@@ -294,7 +313,7 @@ export default class Trace {
      */
     apply(obj, key, args, result) {
 
-        if (this.isActive()) {
+        if (isActive()) {
             let prefix = '';
             let postfix = '';
             let type = typeof result;
@@ -306,7 +325,7 @@ export default class Trace {
                 postfix = ` === ${id(result)}`;
             }
 
-            actions[this.index] = `${indent}${prefix}${!obj ? '' : id(obj) + '.'}${key}(${serializeArgs(args)})${postfix};`;
+            this.value = `${indent}${prefix}${!obj ? '' : id(obj) + '.'}${key}(${serializeArgs(args)})${postfix};`;
         }
 
         return result;
@@ -320,9 +339,9 @@ export default class Trace {
      */
     construct(key, args, result) {
 
-        if (this.isActive()) {
+        if (isActive()) {
             created.set(result, nextId);
-            actions[this.index] = `${indent}${id(result)} = new ${key}(${serializeArgs(args)});`;
+            this.value = `${indent}${id(result)} = new ${key}(${serializeArgs(args)});`;
             nextId++;
         }
 
@@ -334,9 +353,9 @@ export default class Trace {
      * @param {string} name The name to display for the context.
      */
     begin(name) {
-        if (this.isActive()) {
-            actions.push(`${indent}// ${name}`);
-            actions.push(`${indent}{`);
+        if (isActive()) {
+            actions.push({ value: `${indent}// ${name}` });
+            actions.push({ value: `${indent}{` });
             indent += tab;
         }
     }
@@ -345,9 +364,9 @@ export default class Trace {
      * Close the current wrapping context and remove the indent.
      */
     end() {
-        if (this.isActive()) {
+        if (isActive()) {
             indent = new String(indent).substr(tab.length);
-            actions[this.index] = `${indent}}`;
+            this.value = `${indent}}`;
         }
     }
 }
