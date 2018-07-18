@@ -202,11 +202,16 @@ export function ignoreSubCalls(obj, name, exceptArgs) {
  * @param {Function} fn The function whose sub-calls to reveal.
  */
 function revealSubCalls(fn) {
-    return new Proxy(fn, {
-        apply: (target, obj, args) => {
-            return reveal(() => Reflect.apply(target, obj, args));
-        }
-    });
+    if (!(fn instanceof Function))
+        return fn;
+
+    // Use a function instead of a Proxy to avoid an Edge bug in some cases:
+    // https://github.com/Microsoft/ChakraCore/issues/5479
+    const target = fn;
+    return function(...args) {
+        const obj = this;
+        return reveal(() => Reflect.apply(target, obj, args));
+    };
 }
 
 /**
