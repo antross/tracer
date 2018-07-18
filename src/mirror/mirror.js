@@ -5,11 +5,8 @@ const apply = Reflect.apply;
 const construct = Reflect.construct;
 const defineProperties = Object.defineProperties;
 const getOwnPropertyDescriptors = Object.getOwnPropertyDescriptors;
-const Array_forEach = Array.prototype.forEach;
-const NativeProxy = Proxy;
 const WeakMap_get = WeakMap.prototype.get;
 const WeakMap_set = WeakMap.prototype.set;
-const __proto__set = Object.getOwnPropertyDescriptor(Object.prototype, '__proto__').set;
 
 /**
  * Map resolving native types to their mirrored types to avoid duplication.
@@ -22,10 +19,9 @@ const mapNativeToMirror = new WeakMap();
  * Returned objects can be used without being traced by later overrides.
  * @template T
  * @param {T} NativeType The type to mirror.
- * @param {string[]} [spawnMethods] Methods which return new instances of NativeType.
  * @return {T} A mirror type tied to the provided.
  */
-export default function mirror(NativeType, spawnMethods) {
+export default function mirror(NativeType) {
 
     // Check for previously mirrored types if available.
     let MirrorType = apply(WeakMap_get, mapNativeToMirror, [NativeType]);
@@ -35,7 +31,7 @@ export default function mirror(NativeType, spawnMethods) {
 
         // Handle constructors vs. static objects appropriately.
         if (typeof NativeType === 'function') {
-            MirrorType = mirrorFunction(NativeType, spawnMethods);
+            MirrorType = mirrorFunction(NativeType);
         } else {
             MirrorType = mirrorObject(NativeType);
         }
@@ -53,14 +49,13 @@ export default function mirror(NativeType, spawnMethods) {
  * Used for types like `Date`, `WeakMap`, etc.
  * @template T
  * @param {T} NativeType The native type to mirror.
- * @param {string[]} [spawnMethods] Methods which return new instances of NativeType.
  * @return {T} The mirrored type.
  */
-function mirrorFunction(NativeType, spawnMethods) {
+function mirrorFunction(NativeType) {
 
     // A constructor to be the public entry point for the mirrored type.
     function MirrorType(...args) {
-        return mirrorInstance(MirrorType, construct(NativeType, args));
+        return construct(NativeType, args, MirrorType);
     }
 
     // Copy NativeType properties to MirrorType (except `prototype`).
@@ -83,22 +78,7 @@ function mirrorFunction(NativeType, spawnMethods) {
 
     }
 
-    // Handle methods which return new instances of NativeType.
-    if (spawnMethods) {
-        mirrorResult(MirrorType, spawnMethods);
-    }
-
     return MirrorType;
-}
-
-/**
- * Ties the provided native instance to the specified mirrored type.
- */
-function mirrorInstance(MirrorType, nativeInstance) {
-    if (MirrorType.prototype) {
-        apply(__proto__set, nativeInstance, [MirrorType.prototype]);
-    }
-    return nativeInstance;
 }
 
 /**
@@ -113,20 +93,4 @@ function mirrorObject(NativeObject) {
     const MirrorObject = {};
     defineProperties(MirrorObject, getOwnPropertyDescriptors(NativeObject));
     return MirrorObject;
-}
-
-/**
- * Wraps the specified methods to return new instances of the mirrored type.
- * Used for types like `Array` on methods like `concat`, `map`, etc.
- * @param {Function} MirrorType The type to wrap methods for.
- * @param {Function[]} methods The names of the methods returning new MirrorType instances.
- */
-function mirrorResult(MirrorType, methods) {
-    apply(Array_forEach, methods, [(methodName) => {
-        MirrorType.prototype[methodName] = new NativeProxy(MirrorType.prototype[methodName], {
-            apply: (target, obj, args) => {
-                return mirrorInstance(MirrorType, apply(target, obj, args));
-            }
-        });
-    }]);
 }
