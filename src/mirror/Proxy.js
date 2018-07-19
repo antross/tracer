@@ -6,6 +6,18 @@ import WeakMap from './WeakMap.js';
 let MirrorProxy = mirror(Proxy);
 
 /**
+ * Map of `MirrorProxy` objects to their provided handlers.
+ * @type {WeakMap<MirrorProxy, ProxyHandler>}
+ */
+const handlers = new WeakMap();
+
+/**
+ * Map of `MirrorProxy` objects to their wrapped functions.
+ * @type {WeakMap<MirrorProxy, Function>}
+ */
+const proxies = new WeakMap();
+
+/**
  * Alter `Function.prototype.toString` to make `MirrorProxy` appear more native.
  * This leaves the native `Proxy` unaltered to avoid masking cross-browser issues.
  * Currently all browsers "leak" that a native function is proxied in some way:
@@ -25,21 +37,18 @@ function fixProxyToString() {
         // An exception also indicates the polyfill is needed
     }
 
-    /**
-     * Map of `MirrorProxy` objects to their wrapped functions.
-     * @type {WeakMap<MirrorProxy, Function>}
-     */
-    const proxies = new WeakMap();
-
     // Shim mirror proxy creation to track proxied functions
     MirrorProxy = new Proxy(MirrorProxy, {
         construct: (target, args, newTarget) => {
+            if (mergeNestedFunctionProxies(args[0], args[1]))
+                return args[0];
 
             const result = Reflect.construct(target, args, newTarget);
 
             // Track proxies created for functions
             if (typeof args[0] === 'function') {
                 proxies.set(result, args[0]);
+                handlers.set(result, args[1]);
 
                 // Also update `prototype.constructor` for completeness
                 // Excludes `Promise` for now due to extra logs in Chrome...
@@ -65,6 +74,64 @@ function fixProxyToString() {
         }
     });
 
+}
+
+/**
+ * Avoid double-wrapping functions to work around `typeof` bug in Edge.
+ * Instead, merge their handlers together into the original `Proxy`.
+ * https://github.com/Microsoft/ChakraCore/issues/5282
+ */
+function mergeNestedFunctionProxies(target, handler) {
+    if (typeof target !== 'function')
+        return false;
+
+    const currentHandler = handlers.get(target);
+    if (!currentHandler)
+        return false;
+
+    merge(handler, currentHandler);
+    return true;
+}
+
+/**
+ * Merge a new `ProxyHandler` into an existing one to avoid `Proxy` nesting.
+ * TODO: support merging traps beyond `apply` and `construct`.
+ * @param {ProxyHandler} newHandler
+ * @param {ProxyHandler} currentHandler
+ */
+function merge(newHandler, currentHandler) {
+
+    if (newHandler.apply) {
+        const currentApply = currentHandler.apply;
+        if (currentApply) {
+            // if an existing trap exists, chain it to the new one using mapping functions
+            // the resulting chained wrapper replaces the trap on the existing handler
+            currentHandler.apply = function (target, obj, args) {
+                return newHandler.apply(function (...a) {
+                    return currentApply(target, this, a);
+                }, obj, args);
+            };
+        } else {
+            // otherwise just assign the new trap to the existing handler
+            currentHandler.apply = newHandler.apply;
+        }
+    }
+
+    if (newHandler.construct) {
+        const currentConstruct = currentHandler.construct;
+        if (currentConstruct) {
+            // if an existing trap exists, chain it to the new one using mapping functions
+            // the resulting chained wrapper replaces the trap on the existing handler
+            currentHandler.construct = function (target, args, newTarget) {
+                return newHandler.construct(function (...a) {
+                    return currentConstruct(target, a, new.target);
+                }, args, newTarget);
+            };
+        } else {
+            // otherwise just assign the new trap to the existing handler
+            currentHandler.construct = newHandler.construct;
+        }
+    }
 }
 
 fixProxyToString();
