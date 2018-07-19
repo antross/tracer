@@ -1,17 +1,9 @@
 
 // Cache references to native APIs.
 // Avoids being influenced by overrides later.
-const apply = Reflect.apply;
 const construct = Reflect.construct;
 const defineProperties = Object.defineProperties;
 const getOwnPropertyDescriptors = Object.getOwnPropertyDescriptors;
-const WeakMap_get = WeakMap.prototype.get;
-const WeakMap_set = WeakMap.prototype.set;
-
-/**
- * Map resolving native types to their mirrored types to avoid duplication.
- */
-const mapNativeToMirror = new WeakMap();
 
 /**
  * Provides a mirrored version of the `NativeType` constructor and prototype.
@@ -23,40 +15,10 @@ const mapNativeToMirror = new WeakMap();
  */
 export default function mirror(NativeType) {
 
-    // Check for previously mirrored types if available.
-    let MirrorType = apply(WeakMap_get, mapNativeToMirror, [NativeType]);
-
-    // Otherwise create a new mirrored type.
-    if (!MirrorType) {
-
-        // Handle constructors vs. static objects appropriately.
-        if (typeof NativeType === 'function') {
-            MirrorType = mirrorFunction(NativeType);
-        } else {
-            MirrorType = mirrorObject(NativeType);
-        }
-
-        // And save the mapping for future use.
-        apply(WeakMap_set, mapNativeToMirror, [NativeType, MirrorType]);
-    }
-
-    return MirrorType;
-}
-
-/**
- * Returns a constructor of mirrored types tied to their own mirrored prototype.
- * Created instances are still backed by the original native type.
- * Used for types like `Date`, `WeakMap`, etc.
- * @template T
- * @param {T} NativeType The native type to mirror.
- * @return {T} The mirrored type.
- */
-function mirrorFunction(NativeType) {
-
-    // A constructor to be the public entry point for the mirrored type.
-    function MirrorType(...args) {
+    // An object/constructor to be the public entry point for the mirrored type.
+    const MirrorType = typeof NativeType !== 'function' ? {} : function(...args) {
         return construct(NativeType, args, MirrorType);
-    }
+    };
 
     // Copy NativeType properties to MirrorType (except `prototype`).
     const descriptors = getOwnPropertyDescriptors(NativeType);
@@ -71,7 +33,7 @@ function mirrorFunction(NativeType) {
             getOwnPropertyDescriptors(NativeType.prototype)
         );
 
-    } else {
+    } else if (MirrorType.prototype) {
 
         // Special-case `Proxy` to `undefined`.
         MirrorType.prototype = NativeType.prototype;
@@ -79,18 +41,4 @@ function mirrorFunction(NativeType) {
     }
 
     return MirrorType;
-}
-
-/**
- * Returns an object with copies of all properties from the provided native object.
- * Used for types like `Math`, `Reflect`, etc.
- * @template T
- * @param {T} NativeObject The native object to mirror.
- * @returns {T} The mirrored object.
- */
-function mirrorObject(NativeObject) {
-    // Copy NativeObject properties to MirrorObject.
-    const MirrorObject = {};
-    defineProperties(MirrorObject, getOwnPropertyDescriptors(NativeObject));
-    return MirrorObject;
 }
