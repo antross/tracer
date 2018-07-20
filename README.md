@@ -38,9 +38,9 @@ of site compatibility issues which occur in some, but not all major browsers.
 
 ### Running
 
-1. Click the tracer "T" icon to begin tracing (page will reload)
+1. Click the tracer icon to begin tracing (page will reload)
 2. (Optionally) interact with the page
-3. Click the tracer "T" icon to end tracing (download prompt will appear)
+3. Click the tracer icon to end tracing (download prompt will appear)
 4. Repeat steps 1-3 in each target browser
 5. Open the traces in your diff tool ([see below](#diff-in-visual-studio-code))
 
@@ -56,6 +56,6 @@ of site compatibility issues which occur in some, but not all major browsers.
 
 You can capture a trace of just a specific interaction (e.g. clicking on a 
 button) by stopping tracing after the page reloads, but ignoring the prompt to
-download the trace file. Then you can restart tracing by clicking the "T" icon
-again, interact with the page, and stop tracing. At this point you'll be
+download the trace file. Then you can restart tracing by clicking the tracer
+icon again, interact with the page, and stop tracing. At this point you'll be
 prompted to download a new trace file of just your most recent interaction.
