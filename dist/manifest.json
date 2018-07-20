@@ -10,7 +10,7 @@
     },
     "browser_action": {
         "default_icon": {
-            "40": "image/default.png"
+            "40": "image/disabled.png"
         },
         "default_title": "Trace page execution"
     },
@@ -22,7 +22,7 @@
         }
     ],
     "icons": {
-        "40": "image/default.png"
+        "40": "image/disabled.png"
     },
     "web_accessible_resources": [
         "main.js"

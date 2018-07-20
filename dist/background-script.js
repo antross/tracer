@@ -24,7 +24,7 @@ browser.browserAction.onClicked.addListener(tab => {
 function updateIcon(enabled) {
     browser.browserAction.setIcon({
         path: {
-            "40": `image/${enabled ? 'tracing' : 'default'}.png`
+            "40": `image/${enabled ? 'enabled' : 'disabled'}.png`
         }
     });
 }
