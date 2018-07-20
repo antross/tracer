@@ -330,7 +330,9 @@ export default class Trace {
                 postfix = ` === ${id(result)}`;
             }
 
-            this.value = `${indent}${prefix}${!obj ? '' : id(obj) + '.'}${key}(${serializeArgs(args)})${postfix};`;
+            const objId = typeof obj === 'undefined' ? '' : typeof obj === 'number' ? `(${id(obj)}).` : `${id(obj)}.`;
+
+            this.value = `${indent}${prefix}${objId}${key}(${serializeArgs(args)})${postfix};`;
         }
 
         return result;
