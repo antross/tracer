@@ -38,13 +38,11 @@ of site compatibility issues which occur in some, but not all major browsers.
 
 ### Running
 
-1. Navigate to the page you want to trace
-2. Click the tracer "T" icon to begin tracing (page will reload)
-3. (Optionally) interact with the page
-4. Click the tracer "T" icon to end tracing (download prompt will appear)
-5. Save the trace to disk
-6. Repeat steps 1-5 in each target browser
-7. Open the traces in your diff tool ([see below](#diff-in-visual-studio-code))
+1. Click the tracer "T" icon to begin tracing (page will reload)
+2. (Optionally) interact with the page
+3. Click the tracer "T" icon to end tracing (download prompt will appear)
+4. Repeat steps 1-3 in each target browser
+5. Open the traces in your diff tool ([see below](#diff-in-visual-studio-code))
 
 ### Diff in Visual Studio Code
 
