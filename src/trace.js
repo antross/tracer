@@ -2,9 +2,12 @@ import Array from './mirror/Array.js';
 import JSON from './mirror/JSON.js';
 import Proxy from './mirror/Proxy.js';
 import Reflect from './mirror/Reflect.js';
+import RegExp from './mirror/RegExp.js';
 import String from './mirror/String.js';
 import WeakMap from './mirror/WeakMap.js';
 import WeakSet from './mirror/WeakSet.js';
+
+const NativeRegExp = window.RegExp;
 
 const tab = new String('\t');
 const traceObjectIDs = false;
@@ -120,7 +123,11 @@ function idObject(obj) {
         // Work around functions wrapped by 2+ proxies in Edge.
         return idFunction(obj);
 
-    } else {
+    } else if (obj instanceof NativeRegExp) {
+
+        return `${new RegExp(obj)}`;
+
+    }else {
 
         return '{...}';
 
