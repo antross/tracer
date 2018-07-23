@@ -4,10 +4,9 @@ import { ignoreSubCalls as _ignoreSubCalls } from '../trace.js';
 const ignoreSubCalls = _ignoreSubCalls;
 
 /**
- * Make `String.prototype.match` and `String.prototype.replace` consistent by
- * ignoring sub-calls to `global` and `exec`. Both Chrome and Firefox make
- * these sub-calls. Edge does not. Note that the sub-calls are still made, just
- * ignored in the trace.
+ * Make traces for `String.prototype` methods consistent and less noisy by
+ * ignoring sub-calls where needed. Note that the sub-calls are still made,
+ * just omitted from the trace.
  */
 export default function suppress() {
 
