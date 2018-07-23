@@ -24,6 +24,7 @@
             CSS.supports('foo'); // Proxy of static `this` in Chrome (due to incorrect definition as "function")
             (10).toLocaleString(); // Edge implements by calling `Map.prototype.get` (which ends up in the trace)
             location.href; // Chrome and Firefox do not allow this to be overridden, but Edge does
+            '12'.split(/(?=[\s\S])/);
 
             // Array methods which return a new array actually call `new Array()` in Chrome and Firefox
             [1].concat([2]);
