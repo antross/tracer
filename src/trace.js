@@ -89,6 +89,9 @@ function id(obj) {
     if (globalName)
         return globalName;
 
+    if (obj === null)
+        return 'null';
+
     switch (typeof obj) {
 
         case 'function':
