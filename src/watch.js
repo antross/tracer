@@ -280,7 +280,7 @@ function watchValue(descriptor, key, path) {
  * @param {boolean} ignored Whether or not this context is ignored.
  */
 function watchContext(name, fn, ignored) {
-    if (!fn) return fn;
+    if (typeof fn !== 'function') return fn;
 
     let proxy = new Proxy(fn, {
 
