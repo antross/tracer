@@ -20,8 +20,9 @@ of site compatibility issues which occur in some, but not all major browsers.
 #### Chrome
 
 1. Navigate to "[chrome://extensions](chrome://extensions)"
-2. Click "Load Unpacked"
-3. Choose the "tracer/dist" directory
+2. Toggle "Developer mode" to "on"
+3. Click "Load Unpacked"
+4. Choose the "tracer/dist" directory
 
 #### Edge
 
