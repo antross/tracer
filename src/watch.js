@@ -46,14 +46,9 @@ const excludeProps = {
     // Edge allows this to be overridden, but Chrome and Firefox don't
     location: Document.prototype,
 
-    // Firefox throws errors using `performance.navigation` as a `WeakMap` key.
-    navigation: window.Performance.prototype,
-
     // Already not tracked in Chrome due to being a 'value' property.
-    self: window,
+    self: window
 
-    // Firefox throws errors using `performance.timing` as a `WeakMap` key.
-    timing: window.Performance.prototype
 };
 
 /**
