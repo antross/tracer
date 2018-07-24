@@ -64,7 +64,15 @@ export default function fixInstanceStyles(fn) {
                         if (p in styleProto) return t[p] = v;
 
                         // Otherwise trace a setter call for the property. 
-                        return p in styleProto ? t[p] : new Trace().set(style, p, v, t[p] = v);
+                        p in styleProto ? t[p] : new Trace().set(style, p, v, t[p] = v);
+
+                        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/handler/set
+                        // > The set method should return a boolean value.
+                        // > Return true to indicate that assignment succeeded.
+                        // > If the set method returns false, and the
+                        // > assignment happened in strict-mode code,
+                        // > a TypeError will be thrown.
+                        return true;
                     }
                 });
 
