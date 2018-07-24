@@ -1,5 +1,6 @@
 import normalizeFunction from './normalize/Function.js';
 import normalizeNavigator from './normalize/Navigator.js';
+import normalizeStorage from './normalize/storage.js';
 
 /**
  * Normalize cross-browser differences that commonly produce noise in the logs.
@@ -10,4 +11,5 @@ import normalizeNavigator from './normalize/Navigator.js';
 export default function normalize() {
     normalizeFunction();
     normalizeNavigator();
+    normalizeStorage();
 }
