@@ -5,6 +5,7 @@ import { ignore as _ignore, tracked } from './trace.js';
 
 // Import mirrored types to avoid self-tracing.
 import Array from './mirror/Array.js';
+import Number from './mirror/Number.js';
 import Object from './mirror/Object.js';
 import Proxy from './mirror/Proxy.js';
 import Reflect from './mirror/Reflect.js';
@@ -15,6 +16,9 @@ import WeakMap from './mirror/WeakMap.js';
 const ignore = _ignore;
 const fixInstanceStyles = _fixInstanceStyles;
 const fixStaticThis = _fixStaticThis;
+
+// Cache references to native APIs to avoid self-tracing.
+const _isNaN = isNaN;
 
 /**
  * Tracks event listeners to establish trace context.
@@ -100,6 +104,7 @@ export default function watch(obj, path) {
     const descriptors = Object.getOwnPropertyDescriptors(obj);
     const keys = Array.from(Object.keys(descriptors))
         .filter(k => k[0] !== '$') // Ignore items injected by dev tools.
+        .filter(k => _isNaN(Number(k))) // Ignore number properties
         .filter(k => k !== 'constructor') // Ignore `constructor` (handled by 'mirror/Proxy.js').
         .filter(k => excludeProps[k] !== obj); // Ignore explicitly excluded properties.
 
