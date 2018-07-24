@@ -10,6 +10,7 @@ const save = _save;
 const setTracing = _setTracing;
 
 const _createObjectURL = URL.createObjectURL;
+const _random = Math.random;
 const _setTimeout = setTimeout;
 
 // Save the user agent before shimming to get the "real" browser.
@@ -21,7 +22,7 @@ normalize();
 stabilize();
 suppress();
 
-console.log('tracer: Tracing script loaded. Watching API calls...');
+console.log(`tracer: Tracing script loaded for ${location.href}. Watching API calls...`);
 
 document.addEventListener(tracerKey, evt => {
     ignore(() => {
@@ -67,16 +68,21 @@ function saveTraceToFile() {
             'unknown';
 
         a.href = url;
-        a.download = `${location.hostname}_${browser}.trace.txt`;
+        a.download = `${location.hostname}${location.pathname.replace(/\//g, '_')}.${browser}.trace.txt`;
         document.body.appendChild(a);
-        a.click();
 
         _setTimeout(() => {
-            ignore(() => {
-                a.remove();
-                URL.revokeObjectURL(url);
-            });
-        }, 10);
+
+            ignore(() => a.click());
+
+            _setTimeout(() => {
+                ignore(() => {
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                });
+            }, 15000);
+
+        }, _random() * 500); // Stagger to avoid stuck downloads in Edge when saving multiple frames.
     });
 }
 
