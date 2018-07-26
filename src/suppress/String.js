@@ -41,6 +41,20 @@ export default function suppress() {
     ignoreSubCalls(String.prototype, 'replace', [1]);
 
     /**
+     * Calling `String.prototype.search` calls `exec` in Chrome and Firefox,
+     * but not Edge. Ignoring to reduce noise.
+     * 
+     * Code '11px'.search(/px/);
+     * 
+     * Trace:
+     * ```
+     * "11px".search(/px/) === 2;
+     * [...] = /px/.exec("11px");
+     * ```
+     */
+    ignoreSubCalls(String.prototype, 'search');
+
+    /**
      * When passed a `RegExp`, `String.prototype.split` produces a large number
      * of sub-calls in Chrome and Firefox, but not Edge. Ignoring to reduce
      * noise.

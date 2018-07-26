@@ -20,6 +20,7 @@
             /\d+px/g.test(fontSize); // Chrome and Firefox implement `test` by calling `exec` (which ends up in the trace)
             fontSize.match(/\d+px/); // Chrome and Firefox implement `match` by calling `global` and `exec`
             fontSize.replace(/(\d+)px/, '$1'); // Chrome and Firefox implement `replace` by calling `global`, `unicode`, and `exec`
+            fontSize.search(/px/);
             document.getElementsByClassName + ''; // `toString` of proxy of a function
             CSS.supports('foo'); // Proxy of static `this` in Chrome (due to incorrect definition as "function")
             (10).toLocaleString(); // Edge implements by calling `Map.prototype.get` (which ends up in the trace)
