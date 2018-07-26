@@ -48,6 +48,9 @@ const excludeProps = {
     frames: window,
 
     // Edge allows this to be overridden, but Chrome and Firefox don't
+    isTrusted: Event.prototype,
+
+    // Edge allows this to be overridden, but Chrome and Firefox don't
     location: Document.prototype,
 
     // Already not tracked in Chrome due to being a 'value' property.
