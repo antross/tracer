@@ -4,8 +4,15 @@ A library and collection of browser extensions for tracing the execution flow
 of web pages running in the browser. These traces are stabilized against
 non-deterministic behavior and normalized where minor "safe" differences occur.
 Resulting traces can be loaded in a "diff" utility to look for differences
-between browsers. Ultimately the goal is to simplify discovering the root cause
-of site compatibility issues which occur in some, but not all major browsers.
+between browsers. Ultimately the goal is to simplify understanding why a page
+behaves differently across browsers.
+
+## Status
+
+This library is currently a work in progress. A fair amount of noise still
+occurs when tracing certain sites which may prevent getting a usefull "diff".
+Investigation is also ongoing to eliminate a few remaining unintended
+side-effects as the goal is for this library to be invisible to the page.
 
 ## Getting Started
 
