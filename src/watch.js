@@ -44,6 +44,9 @@ const excludeProps = {
     apply: Function.prototype,
     call: Function.prototype,
 
+    // Wrapping `eval` alters execution scope. Excluding to avoid side-effects.
+    eval: window,
+
     // Already not tracked in Chrome due to being a 'value' property.
     frames: window,
 
