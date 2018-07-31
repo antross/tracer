@@ -82,11 +82,11 @@ const handlers = new Map();
 /**
  * Register a custom watch handler for the specified function.
  * This allows altering how a given function appears in the trace.
- * @param {string} key
- * @param {ProxyHandler} handler
+ * @param {string} fullPath Global path to the function (e.g. Array.prototype.push)
+ * @param {ProxyHandler} handler The custom Proxy handler
  */
-export function handle(key, handler) {
-    handlers.set(key, handler);
+export function handle(fullPath, handler) {
+    handlers.set(fullPath, handler);
 }
 
 /**
@@ -200,7 +200,8 @@ function watchValue(descriptor, key, path) {
     const value = descriptor.value;
     if (value && typeof value === 'function') {
 
-        const proxy = descriptor.value = new Proxy(value, handlers.get(key) || {
+        const fullPath = path ? `${path}.${key}` : key;
+        const proxy = descriptor.value = new Proxy(value, handlers.get(fullPath) || {
             apply: (target, obj, args) => {
                 return new Trace().apply(obj, key, args, Reflect.apply(target, obj, args));
             },
