@@ -18,6 +18,10 @@ const ua = navigator.userAgent;
 
 const tracerKey = '--tracer--';
 
+if (document.querySelectorAll('script').length > 1) {
+    throw new Error('tracer: Injected too late - other scripts have already run!');
+}
+
 normalize();
 stabilize();
 suppress();
