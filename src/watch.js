@@ -89,6 +89,14 @@ export function handle(fullPath, handler) {
     handlers.set(fullPath, handler);
 }
 
+function isWindow(obj) {
+    try {
+        return obj.window === obj;
+    } catch (e) {
+        return true; // exceptions can be thrown if this is a cross-origin window
+    }
+}
+
 /**
  * Track and log actions against the provided object.
  * @param {any} obj The object to track.
@@ -100,6 +108,9 @@ export default function watch(obj, path) {
 
     if (excludeObjects.has(obj))
         return; // Ignore objects we've explicitly decided to exclude.
+
+    if (path && isWindow(obj))
+        return; // Avoid walking into other windows
 
     path = path || '';
 
