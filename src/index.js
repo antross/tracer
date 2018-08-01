@@ -72,7 +72,7 @@ function saveTraceToFile() {
             'unknown';
 
         a.href = url;
-        a.download = `${location.hostname}${location.pathname.replace(/\//g, '_')}.${browser}.trace.txt`;
+        a.download = `${location.hostname}${location.pathname.replace(/\//g, '_')}.${browser}.trace.js`;
         document.body.appendChild(a);
 
         _setTimeout(() => {
