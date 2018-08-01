@@ -9,6 +9,7 @@ import WeakSet from './mirror/WeakSet.js';
 
 const NativeRegExp = window.RegExp;
 const Element_localName = Object.getOwnPropertyDescriptor(Element.prototype, 'localName').get;
+const toString = Object.prototype.toString;
 
 const tab = new String('\t');
 const traceObjectIDs = false;
@@ -32,6 +33,20 @@ const created = new WeakMap();
  * Collection to remember tracked objects ensuring they are only wrapped once.
  */
 export const tracked = new WeakSet();
+
+/**
+ * Extracts the name from the result of `Object.prototype.toString()`.
+ * E.g. extracts `Date` from `[object Date]`.
+ */
+const rxObjectName = new RegExp(/([^ ]+)]/);
+
+/**
+ * Tests if a serialized `RegExp` contains a forward slash `/` in a character
+ * set `[]`, e.g. the equivalent expressions `[/]` or `[\/]`. This matters
+ * because Chrome always escapes this regardless of whether it was escaped in
+ * the original `RegExp`, leading to different serializations between browsers.
+ */
+const rxSlashInCharSet = new RegExp(/\[[^\]]*\/[^\]]*\]/);
 
 /**
  * Map of global static object names (`JSON`, `Math`, etc.)
@@ -104,8 +119,12 @@ function id(obj) {
         case 'object':
             return idObject(obj);
 
+        case 'string':
+            const str = new String(obj);
+            return str.length < 128 ? JSON.stringify(str) : 'str';
+
         default:
-            return new String(JSON.stringify(obj)).substr(0, 128);
+            return JSON.stringify(obj);
     }
 }
 
@@ -117,7 +136,7 @@ function idObject(obj) {
 
     } else if (Array.isArray(obj)) {
 
-        return '[...]';
+        return 'arr';
 
     } else if (obj instanceof Function) {
 
@@ -126,7 +145,8 @@ function idObject(obj) {
 
     } else if (obj instanceof NativeRegExp) {
 
-        return `${new RegExp(obj)}`;
+        const str = new String(new RegExp(obj));
+        return str.length < 128 && !rxSlashInCharSet.test(str) ? str : 'regex';
 
     } else if (obj instanceof CSSStyleDeclaration) {
 
@@ -136,9 +156,14 @@ function idObject(obj) {
 
         return Reflect.apply(Element_localName, obj, []);
 
+    } else if (obj instanceof XMLHttpRequest) {
+
+        return 'xhr';
+
     } else {
 
-        return '{...}';
+        const str = Reflect.apply(toString, obj, []);
+        return new String(rxObjectName.exec(str)[1]).toLowerCase();
 
     }
 }
