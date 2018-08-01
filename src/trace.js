@@ -8,6 +8,7 @@ import WeakMap from './mirror/WeakMap.js';
 import WeakSet from './mirror/WeakSet.js';
 
 const NativeRegExp = window.RegExp;
+const Element_localName = Object.getOwnPropertyDescriptor(Element.prototype, 'localName').get;
 
 const tab = new String('\t');
 const traceObjectIDs = false;
@@ -127,7 +128,11 @@ function idObject(obj) {
 
         return `${new RegExp(obj)}`;
 
-    }else {
+    } else if (obj instanceof Element) {
+
+        return Reflect.apply(Element_localName, obj, []);
+
+    } else {
 
         return '{...}';
 
