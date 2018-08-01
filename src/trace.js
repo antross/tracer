@@ -128,6 +128,10 @@ function idObject(obj) {
 
         return `${new RegExp(obj)}`;
 
+    } else if (obj instanceof CSSStyleDeclaration) {
+
+        return 'style';
+
     } else if (obj instanceof Element) {
 
         return Reflect.apply(Element_localName, obj, []);
