@@ -283,6 +283,14 @@ export function setTracing(value) {
     tracing = value;
 }
 
+function increaseIndent() {
+    indent += tab;
+}
+
+function decreaseIndent() {
+    indent = new String(indent).substr(tab.length);
+}
+
 /**
  * Represents a log entry in the trace. Create new instances of `Trace`
  * BEFORE actually making an API call. Then use the appropriate method on a
@@ -296,6 +304,7 @@ export default class Trace {
         this.value = '';
 
         if (isActive()) {
+            increaseIndent();
 
             if (actions.length > maxTraceCount) {
 
@@ -321,6 +330,8 @@ export default class Trace {
     get(obj, key, result) {
 
         if (isActive()) {
+            decreaseIndent();
+
             let prefix = '', suffix = '';
             const type = typeof result;
 
@@ -358,9 +369,13 @@ export default class Trace {
      * @param {any} result The returned value.
      */
     set(obj, key, value, result) {
+
         if (isActive()) {
+            decreaseIndent();
+
             this.value = `${indent}${id(obj)}.${key} = ${id(value)};`;
         }
+
         return result;
     };
 
@@ -374,6 +389,8 @@ export default class Trace {
     apply(obj, key, args, result) {
 
         if (isActive()) {
+            decreaseIndent();
+
             let prefix = '';
             let postfix = '';
             let type = typeof result;
@@ -402,6 +419,8 @@ export default class Trace {
     construct(key, args, result) {
 
         if (isActive()) {
+            decreaseIndent();
+
             created.set(result, nextId);
             this.value = `${indent}${id(result)} = new ${key}(${serializeArgs(args)});`;
             nextId++;
@@ -416,9 +435,10 @@ export default class Trace {
      */
     begin(name) {
         if (isActive()) {
+            decreaseIndent();
             actions.push({ value: `${indent}// ${name}` });
             actions.push({ value: `${indent}{` });
-            indent += tab;
+            increaseIndent();
         }
     }
 
@@ -427,7 +447,8 @@ export default class Trace {
      */
     end() {
         if (isActive()) {
-            indent = new String(indent).substr(tab.length);
+            decreaseIndent();
+            decreaseIndent();
             this.value = `${indent}}`;
         }
     }
