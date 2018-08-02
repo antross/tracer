@@ -11,7 +11,7 @@ const NativeRegExp = window.RegExp;
 const Element_localName = Object.getOwnPropertyDescriptor(Element.prototype, 'localName').get;
 const toString = Object.prototype.toString;
 
-const tab = new String('\t');
+const tab = new String('    ');
 const traceObjectIDs = false;
 const maxTraceCount = 100000;
 
