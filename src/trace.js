@@ -266,7 +266,7 @@ export function save() {
     const result = actions.map(trace => trace.value);
 
     if (droppedCount > 0) {
-        result.unshift(`// + ${droppedCount} dropped lines`);
+        result.push(`// + ${droppedCount} dropped lines`);
     }
 
     actions = new Array();
@@ -284,19 +284,30 @@ export function setTracing(value) {
 }
 
 /**
- * Represents a log entry in the trace.
+ * Represents a log entry in the trace. Create new instances of `Trace`
+ * BEFORE actually making an API call. Then use the appropriate method on a
+ * `Trace` instance AFTER making an API call to fill out the call details.
+ * This ensures the order of entries in the trace remains correct for even
+ * for re-entrant calls.
  */
 export default class Trace {
 
     constructor() {
         this.value = '';
-        if (isActive()) {
-            actions.push(this);
 
-            // Remove items from the front of the list if we're over the limit.
-            while(actions.length > maxTraceCount) {
-                actions.shift();
+        if (isActive()) {
+
+            if (actions.length > maxTraceCount) {
+
+                // Ignore traces if we're over the limit.
                 droppedCount++;
+
+            } else {
+
+                // Otherwise add the new trace to the log. This is done before
+                // setting data to keep the correct order for re-entrant calls.
+                actions.push(this);
+
             }
         }
     }
