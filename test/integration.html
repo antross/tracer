@@ -1,0 +1,110 @@
+<!doctype html>
+<title>Integration Test</title>
+<style>
+    body {
+        background-color: #333;
+        color: #ccc;
+    }
+</style>
+<script type="module">
+    import normalize from '../src/normalize.js';
+    import stabilize from '../src/stabilize.js';
+    import suppress from '../src/suppress.js';
+    import {ignore, save} from '../src/trace.js';
+    import watch from '../src/watch.js';
+
+    const _setTimeout = setTimeout;
+    const done = () => {
+        _setTimeout(() => {
+            callback(save());
+        }, 0);
+    };
+
+    normalize(window);
+    stabilize(window);
+    suppress(window);
+
+    ignore(() => watch(window));
+
+    console.log('starting page script');
+    document.body.style.fontSize = '11px';
+
+    // Exercise special code paths
+    const fontSize = document.body.style.getPropertyValue('font-size'); // Proxy of instance `this` in Chrome (due to fix-instance-styles)
+    /\d+px/g.test(fontSize); // Chrome and Firefox implement `test` by calling `exec` (which ends up in the trace)
+    fontSize.match(/\d+px/); // Chrome and Firefox implement `match` by calling `global` and `exec`
+    fontSize.replace(/(\d+)px/, '$1'); // Chrome and Firefox implement `replace` by calling `global`, `unicode`, and `exec`
+    fontSize.search(/px/);
+    document.getElementsByClassName + ''; // `toString` of proxy of a function
+    CSS.supports('foo'); // Proxy of static `this` in Chrome (due to incorrect definition as "function")
+    (10).toLocaleString(); // Edge implements by calling `Map.prototype.get` (which ends up in the trace)
+    location.href; // Chrome and Firefox do not allow this to be overridden, but Edge does
+    '12'.split(/(?=[\s\S])/);
+
+    // Array methods which return a new array actually call `new Array()` in Chrome and Firefox
+    [1].concat([2]);
+    [1].filter(n => true);
+    [1].map(n => 2);
+    [1].slice(1);
+    [1].splice(0, 1);
+    Array.from([1]);
+
+    ''.replace(/^/, String);
+    /[/]/.test('/foo');
+    [1].push(2);
+
+    (typeof Array.prototype.filter).toLowerCase();
+
+    // Ensure unstable events are excluded
+    window.addEventListener('mousemove', () => {
+        console.log('mousemove!');
+    });
+
+    window.addEventListener('load', function onload() {
+
+        for (var i = 0; i < 2; i++) {
+            const button = document.createElement('button');
+            button.setAttribute('type', 'button');
+            button.setAttribute('data-when', Date());
+            button.textContent = `Test ${Date.now()} ${Math.round(Math.random() * 10)} ${new Date()}`;
+
+            const bodyStyle = getComputedStyle(document.body);
+            button.style.backgroundColor = bodyStyle.backgroundColor;
+            button.style.borderStyle = 'solid';
+            button.style.color = bodyStyle.color;
+
+            if (i === 0) {
+
+                button.onclick = () => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('GET', 'data.json', true);
+                    xhr.send.apply(xhr, [null]);
+                    xhr.onload = () => {
+                        document.querySelector('head').setAttribute('foo', JSON.parse(xhr.responseText).foo);
+                    };
+                };
+
+                document.body.appendChild(button);
+
+            } else {
+
+                button.onclick = () => {
+                    fetch('data.json')
+                        .then(r => r.text())
+                        .then(text => JSON.parse(text))
+                        .then(data => {
+                            document.querySelector('title').setAttribute('bar', data.bar);
+
+                            done();
+                        })
+                    ;
+                };
+
+                Reflect.apply(Node.prototype.appendChild, document.body, [button]);
+            }
+        }
+
+        setTimeout(() => document.querySelector('button').click(), 10);
+        setTimeout(() => document.querySelector('button + button').click(), 50);
+    });
+</script>
