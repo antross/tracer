@@ -40,21 +40,6 @@ document.addEventListener(tracerKey, evt => {
     });
 });
 
-window.addEventListener('load', () => {
-    ignore(() => {
-        if (document.title === 'Trace Test') {
-            _setTimeout(() => {
-                ignore(() => {
-                    const actions = save();
-                    document.querySelector('pre').textContent = actions
-                        .map((line, index) => `${(index + '').padStart(3)}: ${line}`)
-                        .join('\n');
-                });
-            }, 1000);
-        }
-    });
-});
-
 function saveTraceToFile() {
     ignore(() => {
         const actions = save();
