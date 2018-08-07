@@ -77,11 +77,10 @@ window.addEventListener("load", function() { });
     body === document.body;
     Reflect.apply(appendChild, body, arr) === button;
         body.appendChild(button) === button;
-    setTimeout(function() { }, 10);
-    setTimeout(function() { }, 50);
+    setTimeout(function() { }, 1);
 }
 
-// timeout 10ms
+// timeout 1ms
 {
     document.querySelector("button") === button;
     button.click();
@@ -101,9 +100,10 @@ window.addEventListener("load", function() { });
     xhr.responseText === "{\r\n    \"foo\": \"bar\",\r\n    \"bar\": \"baz\"\r\n}\r\n";
     object = JSON.parse("{\r\n    \"foo\": \"bar\",\r\n    \"bar\": \"baz\"\r\n}\r\n");
     head.setAttribute("foo", "bar");
+    setTimeout(function() { }, 2);
 }
 
-// timeout 50ms
+// timeout 2ms
 {
     document.querySelector("button + button") === button;
     button.click();
