@@ -8,7 +8,7 @@ const Date_toString = Date.prototype.toString;
 /**
  * A fixed starting date seed to keep values consisted across runs.
  */
-let d = new NativeDate(2018, 6, 17, 11, 32).getTime();
+let d = Date.UTC(2018, 6, 17, 11, 32);
 
 /**
  * Track the number of times `now()` has been called to limit increments.

@@ -48,8 +48,8 @@
         for (var i = 0; i < 2; i++) {
             const button = document.createElement('button');
             button.setAttribute('type', 'button');
-            button.setAttribute('data-when', Date());
-            button.textContent = `Test ${Date.now()} ${Math.round(Math.random() * 10)} ${new Date()}`;
+            button.setAttribute('data-when', 'now');
+            button.textContent = `Test ${Date.now()} ${Math.round(Math.random() * 10)} ${new Date().toUTCString()}`;
 
             const bodyStyle = getComputedStyle(document.body);
             button.style.backgroundColor = bodyStyle.backgroundColor;
