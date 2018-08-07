@@ -64,6 +64,8 @@
                     xhr.send.apply(xhr, [null]);
                     xhr.onload = () => {
                         document.querySelector('head').setAttribute('foo', JSON.parse(xhr.responseText).foo);
+
+                        setTimeout(() => document.querySelector('button + button').click(), 2);
                     };
                 };
 
@@ -87,7 +89,6 @@
             }
         }
 
-        setTimeout(() => document.querySelector('button').click(), 10);
-        setTimeout(() => document.querySelector('button + button').click(), 50);
+        setTimeout(() => document.querySelector('button').click(), 1);
     });
 </script>
