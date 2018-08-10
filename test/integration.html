@@ -38,6 +38,9 @@
 
     (typeof Array.prototype.filter).toLowerCase();
 
+    sessionStorage.setItem('foo', 'bar');
+    sessionStorage.getItem('foo');
+
     // Ensure unstable events are excluded
     window.addEventListener('mousemove', () => {
         console.log('mousemove!');

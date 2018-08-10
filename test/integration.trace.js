@@ -25,6 +25,10 @@ arr = Array.from(arr);
 regex.test("/foo") === true;
 arr.push(2);
 "function".toLowerCase() === "function";
+storage = window.sessionStorage;
+storage.setItem("foo", "bar") === "bar";
+storage === window.sessionStorage;
+storage.getItem("foo") === "bar";
 window.addEventListener("mousemove", function() { });
 window.addEventListener("load", function() { });
 
