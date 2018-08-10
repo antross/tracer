@@ -80,6 +80,7 @@ function normalizeWithMemoryStorage(obj, name) {
     const proxy = new Proxy(Object.create(Storage.prototype), {
         set: (target, p, value) => {
             target[p] = `${value}`;
+            return true;
         }
     });
 
