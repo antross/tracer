@@ -160,6 +160,10 @@ function idObject(obj) {
 
         return 'xhr';
 
+    } else if (obj instanceof Storage) {
+
+        return 'storage';
+
     } else {
 
         const str = Reflect.apply(toString, obj, []);
