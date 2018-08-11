@@ -1,12 +1,39 @@
 import Proxy from '../mirror/Proxy.js';
 
 /**
- * Override `Math.random()` to always return `0.5` for stable results.
- * An earlier approach used a stable pattern, but resulted in a fair amount
- * of noise if a single extra call occurred early on in one of the traces.
+ * Track the number of times `random()` has been called to limit increments.
+ */
+let calls = 0;
+
+/**
+ * Start `Math.random()` at `0.5`.
+ */
+let value = 50;
+
+/**
+ * Return a stabilized random value incrementing by 0.01 every 100 calls.
+ * This reduces noise due to extra calls while avoiding hanging pages
+ * which use tight loops while waiting for the value to change.
+ * An earlier approach stepped on every call, but produced a fair amount
+ * of noise if an additional call was made early on in one of the traces.
+ * @return {number} The next stabilized step.
+ */
+function next() {
+    calls++;
+
+    if (calls > 100) {
+        value = (value + 1) % 100;
+        calls = 0;
+    }
+
+    return value / 100;
+}
+
+/**
+ * Override `Math.random()` to always return stabilized results.
  */
 export default function stabilize() {
 
-    Math.random = new Proxy(Math.random, { apply: () => 0.5 });
+    Math.random = new Proxy(Math.random, { apply: () => next() });
 
 }
