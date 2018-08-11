@@ -18,6 +18,7 @@ QUnit.test('Integration', function(assert) {
 
                     assert.equal(trace.join('\n'), expected, 'Trace matches previously saved version.');
 
+                    done();
                 };
             };
         });
